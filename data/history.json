@@ -1,0 +1,22 @@
+[
+  {
+    "id": "launch-1778878140384-0",
+    "text": "MCP in one sentence: stop making one leader own the whole slot, let multiple proposers compete, and make ordering feel more like a market.",
+    "reason": "curated launch queue",
+    "approved": true,
+    "posted": true,
+    "source": "launch-curated",
+    "createdAt": "2026-05-15T20:49:00.384Z",
+    "postedAt": "2026-05-15T20:49:14.047Z",
+    "xResponse": {
+      "data": {
+        "text": "MCP in one sentence: stop making one leader own the whole slot, let multiple proposers compete, and make ordering feel more like a market.",
+        "id": "2055390071298142440",
+        "edit_history_tweet_ids": [
+          "2055390071298142440"
+        ]
+      }
+    },
+    "type": "post"
+  }
+]

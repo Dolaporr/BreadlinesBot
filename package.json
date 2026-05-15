@@ -1,0 +1,33 @@
+{
+  "name": "breadlines-bot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=23.3.0"
+  },
+  "scripts": {
+    "draft": "node ./scripts/draft-posts.mjs",
+    "draft:ai": "node ./scripts/ai-draft-posts.mjs",
+    "bot:cycle": "node ./scripts/bot-cycle.mjs",
+    "bot:daemon": "node ./scripts/bot-daemon.mjs",
+    "replies:show": "node ./scripts/show-replies.mjs",
+    "reply:approved": "node ./scripts/post-approved-reply.mjs",
+    "post:approved": "node ./scripts/post-approved.mjs",
+    "queue:show": "node ./scripts/show-queue.mjs",
+    "queue:clean": "node ./scripts/clean-queue.mjs",
+    "queue:seed-launch": "node ./scripts/seed-launch-queue.mjs",
+    "launch:mode": "node ./scripts/set-launch-mode.mjs",
+    "schedule:next": "node ./scripts/schedule-next.mjs",
+    "verify:x": "node ./scripts/verify-account.mjs",
+    "oauth:bot:start": "node ./scripts/oauth-pin-start.mjs",
+    "oauth:bot:finish": "node ./scripts/oauth-pin-finish.mjs",
+    "start": "elizaos start --character ./characters/breadlines-bot.character.json --port 3001",
+    "configure": "elizaos start --configure --character ./characters/breadlines-bot.character.json --port 3001",
+    "dev": "elizaos dev --character ./characters/breadlines-bot.character.json --port 3001",
+    "check:character": "node -e \"JSON.parse(require('fs').readFileSync('./characters/breadlines-bot.character.json','utf8')); console.log('character json ok')\""
+  },
+  "devDependencies": {
+    "@elizaos/cli": "^1.7.2"
+  }
+}

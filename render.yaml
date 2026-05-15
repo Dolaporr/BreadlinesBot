@@ -1,0 +1,20 @@
+services:
+  - type: worker
+    name: breadlines-bot
+    runtime: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm run bot:daemon
+    envVars:
+      - key: NODE_VERSION
+        value: 24.15.0
+      - key: TWITTER_DRY_RUN
+        value: "false"
+      - key: BOT_APPROVAL_MODE
+        value: "false"
+      - key: BOT_AUTO_POST
+        value: "true"
+      - key: BOT_AUTO_REPLY
+        value: "false"
+      - key: BOT_SEARCH_ENABLED
+        value: "false"

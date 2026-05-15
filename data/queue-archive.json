@@ -1,0 +1,311 @@
+[
+  {
+    "id": "draft-1778869889062-0",
+    "text": "FCFS is simple until spam learns how lines work. Then the fair queue starts looking like a bread line with faster shoes.",
+    "approved": false,
+    "posted": false,
+    "createdAt": "2026-05-15T18:31:29.061Z",
+    "archivedAt": "2026-05-15T20:45:35.921Z",
+    "archiveReason": "policy-filter"
+  },
+  {
+    "id": "ai-1778877619781-bb5253",
+    "text": "Why settle for FCFS when MCP gives multiple proposers a shot at the slot? Think of it as upgrading from one checkout lane to a whole supermarket express—speed and spice included.",
+    "reason": "Explain the advantage of MCP over FCFS using a familiar analogy.",
+    "approved": false,
+    "posted": false,
+    "source": "openai",
+    "createdAt": "2026-05-15T20:40:19.780Z",
+    "archivedAt": "2026-05-15T20:45:35.923Z",
+    "archiveReason": "policy-filter"
+  },
+  {
+    "id": "ai-1778877619781-5d41db",
+    "text": "Fresh or stale oracle data? That’s the difference between a warm baguette and an old cracker. Latency kills freshness, and freshness keeps the market buzzing.",
+    "reason": "Explain oracle freshness importance with a bread metaphor.",
+    "approved": false,
+    "posted": false,
+    "source": "openai",
+    "createdAt": "2026-05-15T20:40:19.780Z",
+    "archivedAt": "2026-05-15T20:45:35.923Z",
+    "archiveReason": "policy-filter"
+  },
+  {
+    "id": "ai-1778877619781-f79a4d",
+    "text": "Proposer competition in MCP means no single leader hogging the slot. It’s like having multiple bakers racing to serve the best loaf—more flavor, less waiting.",
+    "reason": "Reinforce proposer competition with an imaginative metaphor.",
+    "approved": false,
+    "posted": false,
+    "source": "openai",
+    "createdAt": "2026-05-15T20:40:19.780Z",
+    "archivedAt": "2026-05-15T20:45:35.923Z",
+    "archiveReason": "policy-filter"
+  },
+  {
+    "id": "ai-1778877619781-a4213a",
+    "text": "FCFS might be first-come, first-served, but it’s no party in spam season. MCP hands out multiple wristbands so everyone gets a fair dance floor. Token holders, rejoice.",
+    "reason": "Use humorous party imagery to explain fairness under MCP.",
+    "approved": false,
+    "posted": false,
+    "source": "openai",
+    "createdAt": "2026-05-15T20:40:19.780Z",
+    "archivedAt": "2026-05-15T20:45:35.923Z",
+    "archiveReason": "policy-filter"
+  },
+  {
+    "id": "ai-1778877619781-c3fb58",
+    "text": "At a $BREADLINES stroll, latency’s the grumpy baker slowing the queue. Keep the oracles fresh and proposers competing to bake a market that runs like clockwork. See how at breadlinesmarkets.com.",
+    "reason": "Combine brand mention with a concise explanation of latency and oracle freshness.",
+    "approved": false,
+    "posted": false,
+    "source": "openai",
+    "createdAt": "2026-05-15T20:40:19.780Z",
+    "archivedAt": "2026-05-15T20:45:35.923Z",
+    "archiveReason": "policy-filter"
+  },
+  {
+    "id": "ai-1778877655062-9cb5fc",
+    "text": "MCP isn't just a fancy acronym. It rewrites the Solana proposer race, turning that FCFS bread line into a vibrant market where multiple chefs compete for the freshest slice.",
+    "reason": "Explains MCP with engaging breadline metaphor and GenZ tone",
+    "approved": false,
+    "posted": false,
+    "source": "openai",
+    "createdAt": "2026-05-15T20:40:55.062Z",
+    "archivedAt": "2026-05-15T20:45:35.923Z",
+    "archiveReason": "policy-filter"
+  },
+  {
+    "id": "ai-1778877655063-f9c6e1",
+    "text": "Spam on Solana’s queue? MCP’s market structure crowds out the noise by letting multiple proposers compete, making the lineup smarter, not longer. Pro tip: faster shoes don’t always win.",
+    "reason": "Combines spam resistance and proposer competition with witty breadline metaphor",
+    "approved": false,
+    "posted": false,
+    "source": "openai",
+    "createdAt": "2026-05-15T20:40:55.062Z",
+    "archivedAt": "2026-05-15T20:45:35.923Z",
+    "archiveReason": "policy-filter"
+  },
+  {
+    "id": "ai-1778877655063-5050c6",
+    "text": "Oracle freshness isn’t just a buzzword—it’s the secret ingredient that turns stale markets into fresh opportunities. Keep the data hot, keep the latency low, keep the market buzzing.",
+    "reason": "Highlights importance of oracle freshness with approachable language",
+    "approved": false,
+    "posted": false,
+    "source": "openai",
+    "createdAt": "2026-05-15T20:40:55.062Z",
+    "archivedAt": "2026-05-15T20:45:35.923Z",
+    "archiveReason": "policy-filter"
+  },
+  {
+    "id": "ai-1778877655063-aecef5",
+    "text": "Latency in Solana’s market structure is like a slow cashier holding everyone up. MCP’s multitier proposer race keeps the line moving, fresh oracle data in hand. Welcome to next-level queueing.",
+    "reason": "Uses latency and proposer competition imagery to explain MCP benefits",
+    "approved": false,
+    "posted": false,
+    "source": "openai",
+    "createdAt": "2026-05-15T20:40:55.062Z",
+    "archivedAt": "2026-05-15T20:45:35.923Z",
+    "archiveReason": "policy-filter"
+  },
+  {
+    "id": "ai-1778877655063-8370c2",
+    "text": "Boost your inner waiter: MCP turns a single FCFS door into a competitive race with multiple proposers slicing up the slot like finely baked competition. No more stale deals allowed.",
+    "reason": "Cleverly uses service and market competition metaphor with a touch of humor",
+    "approved": false,
+    "posted": false,
+    "source": "openai",
+    "createdAt": "2026-05-15T20:40:55.062Z",
+    "archivedAt": "2026-05-15T20:45:35.923Z",
+    "archiveReason": "policy-filter"
+  },
+  {
+    "id": "draft-1778869889063-1",
+    "text": "MCP in one sentence: stop making one leader own the whole slot, let multiple proposers compete, and make ordering feel more like a market.",
+    "approved": false,
+    "posted": false,
+    "createdAt": "2026-05-15T18:31:29.061Z",
+    "archivedAt": "2026-05-15T20:49:00.383Z",
+    "archiveReason": "launch-queue-reset"
+  },
+  {
+    "id": "draft-1778869889063-2",
+    "text": "The BreadLinesMarkets simulator asks one question: what happens when queueing rules become market structure? Try the toggles: https://breadlinesmarkets.com",
+    "approved": false,
+    "posted": false,
+    "createdAt": "2026-05-15T18:31:29.061Z",
+    "archivedAt": "2026-05-15T20:49:00.384Z",
+    "archiveReason": "launch-queue-reset"
+  },
+  {
+    "id": "draft-1778869889063-3",
+    "text": "FCFS = whoever reaches the door first. MCP = multiple doors, proposer competition, better structure.",
+    "approved": false,
+    "posted": false,
+    "createdAt": "2026-05-15T18:31:29.061Z",
+    "archivedAt": "2026-05-15T20:49:00.384Z",
+    "archiveReason": "launch-queue-reset"
+  },
+  {
+    "id": "draft-1778869889063-5",
+    "text": "$BREADLINES is the joke. The queueing problem is the serious part.",
+    "approved": false,
+    "posted": false,
+    "createdAt": "2026-05-15T18:31:29.061Z",
+    "archivedAt": "2026-05-15T20:49:00.384Z",
+    "archiveReason": "launch-queue-reset"
+  },
+  {
+    "id": "ai-1778877619781-2b5dab",
+    "text": "MCP isn't just tech jargon—it’s the secret sauce that turns Solana’s proposer race from a drag to a dash. Competitive yet fair, just like the perfect bread line vibes.",
+    "reason": "Introduce MCP with humor and a relatable analogy.",
+    "approved": false,
+    "posted": false,
+    "source": "openai",
+    "createdAt": "2026-05-15T20:40:19.780Z",
+    "archivedAt": "2026-05-15T20:49:00.384Z",
+    "archiveReason": "launch-queue-reset"
+  },
+  {
+    "id": "ai-1778877619781-509923",
+    "text": "In Solana spam fights, a ‘faster shoe’ won’t save you. MCP’s market structure crowds out the spam like a breadline that knows who’s really hungry.",
+    "reason": "Highlight spam resistance with a playful metaphor.",
+    "approved": false,
+    "posted": false,
+    "source": "openai",
+    "createdAt": "2026-05-15T20:40:19.780Z",
+    "archivedAt": "2026-05-15T20:49:00.384Z",
+    "archiveReason": "launch-queue-reset"
+  },
+  {
+    "id": "ai-1778877619781-29fed5",
+    "text": "BreadLinesMarkets simulates how market-like queueing flips the usual FCFS script. Try it yourself and see how latency, spam, and oracle freshness remix your order.",
+    "reason": "Encourage engagement by promoting the simulator and key topics.",
+    "approved": false,
+    "posted": false,
+    "source": "openai",
+    "createdAt": "2026-05-15T20:40:19.780Z",
+    "archivedAt": "2026-05-15T20:49:00.384Z",
+    "archiveReason": "launch-queue-reset"
+  },
+  {
+    "id": "ai-1778877655063-6fcfd7",
+    "text": "FCFS feels like one lane at rush hour. MCP? Multiple lanes, proposers battling it out, crafting a market structure as sharp as Solana’s vision. Now that’s a queue worth waiting for.",
+    "reason": "Contrasts FCFS vs MCP with market structure metaphor, nods to Solana builders",
+    "approved": false,
+    "posted": false,
+    "source": "openai",
+    "createdAt": "2026-05-15T20:40:55.062Z",
+    "archivedAt": "2026-05-15T20:49:00.384Z",
+    "archiveReason": "launch-queue-reset"
+  },
+  {
+    "id": "ai-1778877655063-505a14",
+    "text": "Tired of watching one proposer hog the slot? MCP distributes the opportunity like a fair market, keeping spam at bay and latency low. Think: smart queues, smarter markets. Check breadlinesmarkets.com.",
+    "reason": "Direct mention of website and benefits of MCP in concise format",
+    "approved": false,
+    "posted": false,
+    "source": "openai",
+    "createdAt": "2026-05-15T20:40:55.062Z",
+    "archivedAt": "2026-05-15T20:49:00.384Z",
+    "archiveReason": "launch-queue-reset"
+  },
+  {
+    "id": "ai-1778877655063-3e37b7",
+    "text": "You can’t trick the $BREADLINES queue with speed alone. MCP levels the playing field, so proposers compete on skill, not just who’s fastest. The fairest race in Solana’s slot town.",
+    "reason": "Balances humor with respect for Solana builders, emphasizing fairness",
+    "approved": false,
+    "posted": false,
+    "source": "openai",
+    "createdAt": "2026-05-15T20:40:55.062Z",
+    "archivedAt": "2026-05-15T20:49:00.384Z",
+    "archiveReason": "launch-queue-reset"
+  },
+  {
+    "id": "ai-1778877979779-39755e",
+    "text": "In Solana's market queue, MCP means multiple proposers race fairly, keeping leader monopoly in check and spam out of the line. No single boss, just real competition.",
+    "reason": "Explains MCP and leader monopoly with a focus on fair competition.",
+    "approved": false,
+    "posted": false,
+    "source": "openai",
+    "createdAt": "2026-05-15T20:46:19.777Z",
+    "archivedAt": "2026-05-15T20:49:00.384Z",
+    "archiveReason": "launch-queue-reset"
+  },
+  {
+    "id": "ai-1778877979779-e78bc2",
+    "text": "FBO and FCFS are old news. MCP reshapes Solana slots into a competitive market queue where latency drops and oracle freshness shapes who gets served first.",
+    "reason": "Highlights how MCP improves over FCFS and FBO using concrete terms.",
+    "approved": false,
+    "posted": false,
+    "source": "openai",
+    "createdAt": "2026-05-15T20:46:19.777Z",
+    "archivedAt": "2026-05-15T20:49:00.384Z",
+    "archiveReason": "launch-queue-reset"
+  },
+  {
+    "id": "ai-1778877979779-112af1",
+    "text": "Why settle for one proposer when you can have a market? MCP turns queueing into competition, cutting out spam and delivering fresher prices in less time. BreadLinesMarkets proves it.",
+    "reason": "Promotes MCP benefits and mentions BreadLinesMarkets for engagement.",
+    "approved": false,
+    "posted": false,
+    "source": "openai",
+    "createdAt": "2026-05-15T20:46:19.777Z",
+    "archivedAt": "2026-05-15T20:49:00.384Z",
+    "archiveReason": "launch-queue-reset"
+  },
+  {
+    "id": "ai-1778877979779-07c541",
+    "text": "Oracle freshness isn’t just some crypto buzzword. Late prices tax your market orders hard. MCP keeps proposers on their toes, pushing for the freshest data in every slot.",
+    "reason": "Educates about oracle freshness with a strong focus on MCP impact.",
+    "approved": false,
+    "posted": false,
+    "source": "openai",
+    "createdAt": "2026-05-15T20:46:19.777Z",
+    "archivedAt": "2026-05-15T20:49:00.384Z",
+    "archiveReason": "launch-queue-reset"
+  },
+  {
+    "id": "ai-1778877979779-52c6da",
+    "text": "If one leader rules the slot, spam runs wild and latency spikes. MCP is the crowd control that turns the bread line into a sleek market, where proposers compete clean and fast.",
+    "reason": "Summarizes leader monopoly downsides and MCP as the solution using metaphor.",
+    "approved": false,
+    "posted": false,
+    "source": "openai",
+    "createdAt": "2026-05-15T20:46:19.777Z",
+    "archivedAt": "2026-05-15T20:49:00.384Z",
+    "archiveReason": "launch-queue-reset"
+  },
+  {
+    "id": "ai-1778877979779-8a9d3d",
+    "text": "Imagine a queue where multiple proposer doors open at once, each racing to order blocks more efficiently. That’s MCP transforming Solana’s slot market into a sharp queue competition.",
+    "reason": "Explains MCP using the multiple doors metaphor linked to proposer competition.",
+    "approved": false,
+    "posted": false,
+    "source": "openai",
+    "createdAt": "2026-05-15T20:46:19.777Z",
+    "archivedAt": "2026-05-15T20:49:00.384Z",
+    "archiveReason": "launch-queue-reset"
+  },
+  {
+    "id": "ai-1778877979779-7fe78f",
+    "text": "Ever notice how FCFS is basically a speed contest? MCP dials down the footrace and turns the slot into a smart market where latency and spam don’t get VIP passes.",
+    "reason": "Contrasts FCFS and MCP by pointing out FCFS’s speed race aspect.",
+    "approved": false,
+    "posted": false,
+    "source": "openai",
+    "createdAt": "2026-05-15T20:46:19.777Z",
+    "archivedAt": "2026-05-15T20:49:00.384Z",
+    "archiveReason": "launch-queue-reset"
+  },
+  {
+    "id": "ai-1778877979779-6827a5",
+    "text": "At https://breadlinesmarkets.com, you can see how MCP redefines market structure with proposer duels, taming spam and prioritizing fresh oracles. Spoiler: It’s like a fresh start for Solana slots.",
+    "reason": "Drives traffic to the site and highlights MCP features in a punchy way.",
+    "approved": false,
+    "posted": false,
+    "source": "openai",
+    "createdAt": "2026-05-15T20:46:19.777Z",
+    "archivedAt": "2026-05-15T20:49:00.384Z",
+    "archiveReason": "launch-queue-reset"
+  }
+]

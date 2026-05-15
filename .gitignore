@@ -1,0 +1,7 @@
+.env
+.oauth-request.json
+.bot-token.env
+.eliza/
+node_modules/
+dist/
+*.log
