@@ -22,12 +22,6 @@
     "verify:x": "node ./scripts/verify-account.mjs",
     "oauth:bot:start": "node ./scripts/oauth-pin-start.mjs",
     "oauth:bot:finish": "node ./scripts/oauth-pin-finish.mjs",
-    "start": "elizaos start --character ./characters/breadlines-bot.character.json --port 3001",
-    "configure": "elizaos start --configure --character ./characters/breadlines-bot.character.json --port 3001",
-    "dev": "elizaos dev --character ./characters/breadlines-bot.character.json --port 3001",
     "check:character": "node -e \"JSON.parse(require('fs').readFileSync('./characters/breadlines-bot.character.json','utf8')); console.log('character json ok')\""
-  },
-  "devDependencies": {
-    "@elizaos/cli": "^1.7.2"
   }
 }
