@@ -7,6 +7,7 @@
     "node": ">=23.3.0"
   },
   "scripts": {
+    "start": "node ./scripts/bot-daemon.mjs",
     "draft": "node ./scripts/draft-posts.mjs",
     "draft:ai": "node ./scripts/ai-draft-posts.mjs",
     "bot:cycle": "node ./scripts/bot-cycle.mjs",
