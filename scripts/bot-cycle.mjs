@@ -20,10 +20,12 @@ const autoReply = String(process.env.BOT_AUTO_REPLY ?? 'false').toLowerCase() ==
 const approvalMode = String(process.env.BOT_APPROVAL_MODE ?? 'true').toLowerCase() !== 'false'
 const mentionsEnabled = String(process.env.BOT_MENTIONS_ENABLED ?? 'true').toLowerCase() !== 'false'
 const searchEnabled = String(process.env.BOT_SEARCH_ENABLED ?? 'false').toLowerCase() === 'true'
+const backfillMentions = String(process.env.BOT_BACKFILL_MENTIONS ?? 'false').toLowerCase() === 'true'
 const linkEvery = Number(process.env.BOT_LINK_EVERY_N_POSTS || 3)
 const minMinutes = Number(process.env.BOT_MIN_POST_INTERVAL_MINUTES || 180)
 const maxMinutes = Number(process.env.BOT_MAX_POST_INTERVAL_MINUTES || 420)
 const replyLimit = Number(process.env.BOT_MAX_REPLIES_PER_CYCLE || 3)
+const replyScoreThreshold = Number(process.env.BOT_REPLY_SCORE_THRESHOLD || 75)
 
 function readJson(file, fallback) {
   return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : fallback
@@ -116,7 +118,7 @@ If the tweet is irrelevant, hostile, spammy, or not worth replying to, return sh
   const text = cleanText(parsed.text)
   const score = Number(parsed.score || 0)
   return {
-    shouldReply: Boolean(parsed.shouldReply) && score >= 75 && isSafeText(text),
+    shouldReply: Boolean(parsed.shouldReply) && score >= replyScoreThreshold && isSafeText(text),
     score,
     text,
     reason: cleanText(parsed.reason),
@@ -129,7 +131,10 @@ async function collectReplyDrafts({ me, state, replies }) {
 
   if (mentionsEnabled) {
     try {
-      const mentions = await getMentions({ userId: me.id, sinceId: state.lastMentionId })
+      const mentions = await getMentions({
+        userId: me.id,
+        sinceId: backfillMentions ? undefined : state.lastMentionId,
+      })
       for (const tweet of mentions.data || []) {
         candidates.push({ source: 'mention', tweet })
       }

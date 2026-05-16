@@ -82,6 +82,7 @@ Default behavior:
 - `BOT_AUTO_POST=false`: no automatic timeline posts
 - `BOT_AUTO_REPLY=false`: no automatic replies
 - `BOT_MENTIONS_ENABLED=true`: can draft replies to mentions
+- `BOT_BACKFILL_MENTIONS=false`: only checks new mentions after the last seen ID
 - `BOT_SEARCH_ENABLED=false`: does not scan broader search by default
 
 Review reply drafts:
@@ -106,6 +107,18 @@ TWITTER_DRY_RUN=false
 ```
 
 Keep `BOT_SEARCH_ENABLED=false` until mentions are behaving well.
+
+To enable conservative auto-replies to mentions only:
+
+```env
+BOT_AUTO_REPLY=true
+BOT_MENTIONS_ENABLED=true
+BOT_BACKFILL_MENTIONS=false
+BOT_SEARCH_ENABLED=false
+BOT_REPLY_SCORE_THRESHOLD=75
+```
+
+For one catch-up cycle after enabling replies, set `BOT_BACKFILL_MENTIONS=true`, deploy, wait for one cycle, then set it back to `false`.
 
 Run continuously:
 
