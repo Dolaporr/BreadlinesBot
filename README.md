@@ -120,6 +120,23 @@ BOT_REPLY_SCORE_THRESHOLD=75
 
 For one catch-up cycle after enabling replies, set `BOT_BACKFILL_MENTIONS=true`, deploy, wait for one cycle, then set it back to `false`.
 
+## Toly Signal Mode
+
+This mode watches recent `@toly` posts about MCP/FCFS/breadlines/proposers and turns them into standalone supportive commentary. It does not reply directly to Toly.
+
+```env
+BOT_TOLY_SIGNAL_ENABLED=true
+BOT_TOLY_HANDLE=toly
+BOT_TOLY_SIGNAL_TERMS=MCP,FCFS,bread line,breadlines,proposer,leader monopoly
+BOT_TOLY_SIGNAL_DRAFTS_PER_CYCLE=2
+```
+
+Keep broad search replies off while this is enabled:
+
+```env
+BOT_SEARCH_ENABLED=false
+```
+
 Run continuously:
 
 ```bash

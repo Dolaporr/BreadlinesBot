@@ -21,11 +21,14 @@ const approvalMode = String(process.env.BOT_APPROVAL_MODE ?? 'true').toLowerCase
 const mentionsEnabled = String(process.env.BOT_MENTIONS_ENABLED ?? 'true').toLowerCase() !== 'false'
 const searchEnabled = String(process.env.BOT_SEARCH_ENABLED ?? 'false').toLowerCase() === 'true'
 const backfillMentions = String(process.env.BOT_BACKFILL_MENTIONS ?? 'false').toLowerCase() === 'true'
+const tolySignalEnabled = String(process.env.BOT_TOLY_SIGNAL_ENABLED ?? 'false').toLowerCase() === 'true'
+const tolyHandle = (process.env.BOT_TOLY_HANDLE || 'toly').replace(/^@/, '')
 const linkEvery = Number(process.env.BOT_LINK_EVERY_N_POSTS || 3)
 const minMinutes = Number(process.env.BOT_MIN_POST_INTERVAL_MINUTES || 180)
 const maxMinutes = Number(process.env.BOT_MAX_POST_INTERVAL_MINUTES || 420)
 const replyLimit = Number(process.env.BOT_MAX_REPLIES_PER_CYCLE || 3)
 const replyScoreThreshold = Number(process.env.BOT_REPLY_SCORE_THRESHOLD || 75)
+const tolySignalLimit = Number(process.env.BOT_TOLY_SIGNAL_DRAFTS_PER_CYCLE || 2)
 
 function readJson(file, fallback) {
   return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : fallback
@@ -192,6 +195,94 @@ async function collectReplyDrafts({ me, state, replies }) {
   return additions
 }
 
+async function collectTolySignalDrafts({ queue, history, state }) {
+  const terms = (process.env.BOT_TOLY_SIGNAL_TERMS || 'MCP,FCFS,bread line,breadlines,proposer,leader monopoly')
+    .split(',')
+    .map((term) => term.trim())
+    .filter(Boolean)
+    .slice(0, 8)
+
+  const query = `from:${tolyHandle} (${terms.map((term) => `"${term}"`).join(' OR ')}) -is:retweet`
+  let results
+
+  try {
+    results = await searchRecent(query, { sinceId: state.lastTolySignalId })
+  } catch (error) {
+    console.error(`Toly signal fetch skipped: ${error.message}`)
+    return []
+  }
+
+  if (results.meta?.newest_id) state.lastTolySignalId = results.meta.newest_id
+
+  const tweets = (results.data || [])
+    .filter((tweet) => isRelevantTweet(tweet.text))
+    .slice(0, tolySignalLimit)
+
+  if (!tweets.length) return []
+
+  const site = process.env.BREADLINES_SITE || 'https://breadlinesmarkets.com'
+  const recent = [...queue, ...history]
+    .slice(-40)
+    .map((item) => item.text)
+    .filter(Boolean)
+
+  const additions = []
+  const existing = new Set(queue.map((item) => item.text))
+
+  for (const tweet of tweets) {
+    const prompt = `BreadLinesBot watches @${tolyHandle} for market-structure ideas.
+
+Source tweet from @${tolyHandle}:
+${tweet.text}
+
+Write 2 standalone X posts that support or build on the point without sounding like a reply swarm.
+
+Voice:
+- thoughtful, sharp, Solana-native
+- smart GenZ humor, but not corny
+- connects MCP/FCFS/breadlines to market structure
+- respectful to Toly and builders
+
+Rules:
+- 90-230 chars each
+- Do not reply directly to @${tolyHandle}; these are standalone posts
+- You may mention @${tolyHandle} in at most one candidate if it is natural
+- No financial advice, price talk, holder hype, or spammy link behavior
+- Include ${site} only if the post is clearly about the simulator
+- Avoid repeating:
+${recent.map((text) => `- ${text}`).join('\n') || '- none'}
+
+Return JSON only:
+{"posts":[{"text":"...","reason":"..."}]}`
+
+    let parsed
+    try {
+      parsed = await generateJson(prompt)
+    } catch (error) {
+      console.error(`Toly signal generation skipped: ${error.message}`)
+      continue
+    }
+
+    for (const item of parsed.posts || []) {
+      const text = cleanText(item.text)
+      if (!isSafeText(text) || existing.has(text)) continue
+      existing.add(text)
+      additions.push({
+        id: `toly-signal-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+        text,
+        reason: cleanText(item.reason),
+        sourceTweetId: tweet.id,
+        source: 'toly-signal',
+        approved: !approvalMode,
+        posted: false,
+        createdAt: new Date().toISOString(),
+      })
+    }
+  }
+
+  return additions
+}
+
 async function maybePost({ queue, state, history }) {
   const now = new Date()
   if (state.nextPostAt && new Date(state.nextPostAt) > now) {
@@ -275,12 +366,18 @@ if (queue.filter((item) => !item.posted).length < 6) {
 }
 
 let me = null
-if (mentionsEnabled || searchEnabled || (!dryRun && (autoPost || autoReply))) {
+if (mentionsEnabled || searchEnabled || tolySignalEnabled || (!dryRun && (autoPost || autoReply))) {
   try {
     me = await verifyExpectedAccount()
   } catch (error) {
     console.error(error.message)
   }
+}
+
+if (tolySignalEnabled) {
+  const additions = await collectTolySignalDrafts({ queue, history, state })
+  queue.push(...additions)
+  console.log(`Generated ${additions.length} Toly signal drafts.`)
 }
 
 if (me && (mentionsEnabled || searchEnabled)) {
