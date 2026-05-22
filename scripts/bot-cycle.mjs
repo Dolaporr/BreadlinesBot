@@ -13,6 +13,7 @@ const queuePath = path.join(dataDir, 'queue.json')
 const repliesPath = path.join(dataDir, 'replies.json')
 const statePath = path.join(dataDir, 'bot-state.json')
 const historyPath = path.join(dataDir, 'history.json')
+const repliedTweetsPath = path.join(dataDir, 'replied-tweets.json')
 fs.mkdirSync(dataDir, { recursive: true })
 
 const dryRun = String(process.env.TWITTER_DRY_RUN ?? 'true').toLowerCase() !== 'false'
@@ -30,6 +31,32 @@ const maxMinutes = Number(process.env.BOT_MAX_POST_INTERVAL_MINUTES || 420)
 const replyLimit = Number(process.env.BOT_MAX_REPLIES_PER_CYCLE || 3)
 const replyScoreThreshold = Number(process.env.BOT_REPLY_SCORE_THRESHOLD || 75)
 const tolySignalLimit = Number(process.env.BOT_TOLY_SIGNAL_DRAFTS_PER_CYCLE || 2)
+const searchReplyAuthorCooldown = Number(process.env.BOT_SEARCH_REPLY_AUTHOR_COOLDOWN || 86400000) // 24 hours
+
+// Account tagging configuration
+const targetAccounts = {
+  toly: { tag: '@toly', context: 'serious technical points about MCP/FCFS/Solana ordering' },
+  mert: { tag: '@mert', context: 'validators, RPC, Solana infrastructure, developer experience' },
+  vibhu: { tag: '@vibhu', context: 'broader ecosystem, DeFi fairness, market structure' },
+  slingoorio: { tag: '@slingoorio', context: 'satirical, meme-y, dunking on FCFS (he\'s in on the joke)' },
+}
+
+function shouldTagAccount(text, type = 'original') {
+  // Don't tag in replies to general users (only in original posts or quote tweets)
+  if (type === 'reply') return null
+
+  // Check for tone indicators
+  const isSatire = text.toLowerCase().includes('bread line') || text.toLowerCase().match(/\b(lol|lmao|emoji|haha)\b/)
+  const isSerious = text.toLowerCase().match(/\b(technical|proposal|simd|mechanism)\b/)
+  const isTechnical = text.toLowerCase().match(/\b(proposer|latency|mev|ordering|validator)\b/)
+  
+  if (isSatire && Math.random() > 0.6) return targetAccounts.slingoorio
+  if (isSerious && isTechnical) return targetAccounts.toly
+  if (text.toLowerCase().match(/\b(validator|infrastructure|rpc)\b/)) return targetAccounts.mert
+  if (text.toLowerCase().match(/\b(fairness|ecosystem|market)\b/)) return targetAccounts.vibhu
+  
+  return null
+}
 
 function readJson(file, fallback) {
   return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : fallback
@@ -78,19 +105,29 @@ ${recent.map((text) => `- ${text}`).join('\n') || '- none'}
 Return JSON only:
 {"posts":[{"text":"...","reason":"..."}]}`
 
-  const parsed = await generateJson(prompt)
+  const context = {
+    mode: 'original_posts',
+    recentTopics: 'MCP, FCFS, FBO, proposer competition, oracle freshness, latency, leader monopoly',
+    postCount: state.postCount || 0,
+  }
+  const parsed = await generateJson(prompt, { context })
   const existing = new Set(queue.map((item) => item.text))
   const createdAt = new Date().toISOString()
   const additions = (parsed.posts || [])
-    .map((item) => ({
-      id: `cycle-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
-      text: cleanText(item.text),
-      reason: cleanText(item.reason),
-      approved: false,
-      posted: false,
-      source: 'openai-cycle',
-      createdAt,
-    }))
+    .map((item) => {
+      const text = cleanText(item.text)
+      const account = shouldTagAccount(text, 'original')
+      const textWithTag = account ? `${text} ${account.tag}` : text
+      return {
+        id: `cycle-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+        text: textWithTag,
+        reason: cleanText(item.reason),
+        approved: false,
+        posted: false,
+        source: 'openai-cycle',
+        createdAt,
+      }
+    })
     .filter((item) => isSafeText(item.text))
     .filter((item) => !existing.has(item.text))
 
@@ -118,7 +155,13 @@ Return JSON only:
 
 If the tweet is irrelevant, hostile, spammy, or not worth replying to, return shouldReply false.`
 
-  const parsed = await generateJson(prompt)
+  const context = {
+    mode: 'reply',
+    originalTweetId: tweet.id,
+    originalAuthor: tweet.author_id,
+    tweetText: tweet.text,
+  }
+  const parsed = await generateJson(prompt, { context })
   const text = cleanText(parsed.text)
   const score = Number(parsed.score || 0)
   return {
@@ -129,8 +172,18 @@ If the tweet is irrelevant, hostile, spammy, or not worth replying to, return sh
   }
 }
 
-async function collectReplyDrafts({ me, state, replies }) {
+async function collectReplyDrafts({ me, state, replies, repliedTweets }) {
   const seenTweetIds = new Set(replies.map((reply) => reply.targetTweetId))
+  const recentlyRepliedAuthors = new Map() // Track author cooldown for search replies
+  
+  // Build cooldown map from replied tweets
+  const now = Date.now()
+  for (const record of repliedTweets) {
+    if (now - record.repliedAt < searchReplyAuthorCooldown) {
+      recentlyRepliedAuthors.set(record.authorId, record.repliedAt)
+    }
+  }
+
   const candidates = []
 
   if (mentionsEnabled) {
@@ -170,10 +223,19 @@ async function collectReplyDrafts({ me, state, replies }) {
     if (additions.length >= replyLimit) break
     if (seenTweetIds.has(candidate.tweet.id)) continue
     if (!isRelevantTweet(candidate.tweet.text)) continue
+    
+    // For search results, check author cooldown
+    if (candidate.source === 'search' && recentlyRepliedAuthors.has(candidate.tweet.author_id)) {
+      const lastReplyTime = recentlyRepliedAuthors.get(candidate.tweet.author_id)
+      if (now - lastReplyTime < searchReplyAuthorCooldown) {
+        console.log(`Skipping search reply: author ${candidate.tweet.author_id} is in cooldown`)
+        continue
+      }
+    }
 
     const generated = await generateReply({
       tweet: candidate.tweet,
-      includeLink: linkBudget && candidate.source === 'mention',
+      includeLink: linkBudget && candidate.source === 'mention', // Only link on mentions, not search
     })
 
     if (!generated.shouldReply) continue
@@ -183,6 +245,7 @@ async function collectReplyDrafts({ me, state, replies }) {
       id: `reply-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
       targetTweetId: candidate.tweet.id,
       targetText: candidate.tweet.text,
+      authorId: candidate.tweet.author_id,
       text: generated.text,
       reason: generated.reason,
       score: generated.score,
@@ -306,7 +369,13 @@ Return JSON only:
 
     let parsed
     try {
-      parsed = await generateJson(prompt)
+      const context = {
+        mode: 'toly_signal',
+        sourceTweetId: tweet.id,
+        sourceTweetText: tweet.text,
+        sourceTweetAuthor: tolyHandle,
+      }
+      parsed = await generateJson(prompt, { context })
     } catch (error) {
       console.error(`Toly signal generation skipped: ${error.message}`)
       continue
@@ -316,9 +385,11 @@ Return JSON only:
       const text = cleanText(item.text)
       if (!isSafeText(text) || existing.has(text)) continue
       existing.add(text)
+      const account = shouldTagAccount(text, 'original')
+      const textWithTag = account ? `${text} ${account.tag}` : text
       additions.push({
         id: `toly-signal-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
-        text,
+        text: textWithTag,
         reason: cleanText(item.reason),
         sourceTweetId: tweet.id,
         source: 'toly-signal',
@@ -368,7 +439,7 @@ async function maybePost({ queue, state, history }) {
   console.log(`Posted ${nextPost.id}; next window ${state.nextPostAt}`)
 }
 
-async function maybeReply({ replies, state, history }) {
+async function maybeReply({ replies, state, history, repliedTweets }) {
   const ready = replies
     .filter((reply) => !reply.posted && isSafeText(reply.text))
     .filter((reply) => reply.approved || (autoReply && !approvalMode))
@@ -393,6 +464,20 @@ async function maybeReply({ replies, state, history }) {
     reply.xResponse = response
     state.replyCount = (state.replyCount || 0) + 1
     history.push({ ...reply, type: 'reply' })
+    
+    // Track this reply in persistent storage to avoid duplicates
+    if (reply.source === 'search' && reply.authorId) {
+      repliedTweets.push({
+        tweetId: reply.targetTweetId,
+        authorId: reply.authorId,
+        repliedAt: Date.now(),
+      })
+      // Keep only last 1000 replied tweets to avoid bloat
+      if (repliedTweets.length > 1000) {
+        repliedTweets.splice(0, repliedTweets.length - 1000)
+      }
+    }
+    
     console.log(`Replied ${reply.id}`)
   }
 }
@@ -405,6 +490,7 @@ const state = readJson(statePath, {
 const queue = readJson(queuePath, [])
 const replies = readJson(repliesPath, [])
 const history = readJson(historyPath, [])
+const repliedTweets = readJson(repliedTweetsPath, [])
 
 console.log(`Mode: dryRun=${dryRun}, approvalMode=${approvalMode}, autoPost=${autoPost}, autoReply=${autoReply}`)
 
@@ -430,7 +516,7 @@ if (tolySignalEnabled) {
 }
 
 if (me && (mentionsEnabled || searchEnabled)) {
-  const additions = await collectReplyDrafts({ me, state, replies })
+  const additions = await collectReplyDrafts({ me, state, replies, repliedTweets })
   replies.push(...additions)
   console.log(`Generated ${additions.length} reply drafts.`)
 }
@@ -444,11 +530,12 @@ if (me && mentionsEnabled) {
 }
 
 await maybePost({ queue, state, history })
-await maybeReply({ replies, state, history })
+await maybeReply({ replies, state, history, repliedTweets })
 
 writeJson(queuePath, queue)
 writeJson(repliesPath, replies)
 writeJson(statePath, state)
 writeJson(historyPath, history)
+writeJson(repliedTweetsPath, repliedTweets)
 
 console.log('Cycle complete.')
