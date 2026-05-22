@@ -4,6 +4,7 @@ import { loadEnv } from './env.mjs'
 import { generateJson } from './openai-client.mjs'
 import { createTweet, getMentions, searchRecent, verifyExpectedAccount } from './x-client.mjs'
 import { cleanText, hasLink, isRelevantTweet, isSafeText } from './policy.mjs'
+import { analyzeTweetForReceipt, generateTxReceipt } from './tx-receipt.mjs'
 
 loadEnv()
 
@@ -190,6 +191,54 @@ async function collectReplyDrafts({ me, state, replies }) {
       posted: false,
       createdAt: new Date().toISOString(),
     })
+  }
+
+  return additions
+}
+
+async function collectTxReceiptReplies({ me, state, replies }) {
+  const site = process.env.BREADLINES_SITE || 'https://breadlinesmarkets.com'
+  const seenTweetIds = new Set(replies.map((reply) => reply.targetTweetId))
+  const additions = []
+
+  if (!mentionsEnabled) return additions
+
+  try {
+    const mentions = await getMentions({
+      userId: me.id,
+      sinceId: backfillMentions ? undefined : state.lastMentionIdForReceipt,
+    })
+
+    for (const tweet of mentions.data || []) {
+      if (seenTweetIds.has(tweet.id)) continue
+
+      const { hasReceipt, txSignature } = analyzeTweetForReceipt(tweet.text)
+      if (!hasReceipt || !txSignature) continue
+
+      // Generate receipt
+      const generated = generateTxReceipt(txSignature, { site, includeLink: true })
+
+      if (!generated.shouldReply || !isSafeText(generated.text)) continue
+
+      additions.push({
+        id: `receipt-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+        targetTweetId: tweet.id,
+        targetText: tweet.text,
+        txSignature,
+        text: generated.text,
+        reason: generated.reason,
+        source: 'tx-receipt',
+        approved: !approvalMode, // Auto-approve receipts unless in strict approval mode
+        posted: false,
+        createdAt: new Date().toISOString(),
+      })
+
+      seenTweetIds.add(tweet.id)
+    }
+
+    if (mentions.meta?.newest_id) state.lastMentionIdForReceipt = mentions.meta.newest_id
+  } catch (error) {
+    console.error(`TX receipt collection skipped: ${error.message}`)
   }
 
   return additions
@@ -384,6 +433,14 @@ if (me && (mentionsEnabled || searchEnabled)) {
   const additions = await collectReplyDrafts({ me, state, replies })
   replies.push(...additions)
   console.log(`Generated ${additions.length} reply drafts.`)
+}
+
+if (me && mentionsEnabled) {
+  const receiptAdditions = await collectTxReceiptReplies({ me, state, replies })
+  replies.push(...receiptAdditions)
+  if (receiptAdditions.length > 0) {
+    console.log(`Generated ${receiptAdditions.length} tx receipt replies.`)
+  }
 }
 
 await maybePost({ queue, state, history })

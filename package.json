@@ -20,6 +20,7 @@
     "queue:seed-launch": "node ./scripts/seed-launch-queue.mjs",
     "launch:mode": "node ./scripts/set-launch-mode.mjs",
     "schedule:next": "node ./scripts/schedule-next.mjs",
+    "mission:post": "node ./scripts/mission-post.mjs",
     "verify:x": "node ./scripts/verify-account.mjs",
     "oauth:bot:start": "node ./scripts/oauth-pin-start.mjs",
     "oauth:bot:finish": "node ./scripts/oauth-pin-finish.mjs",
