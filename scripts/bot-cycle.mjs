@@ -75,6 +75,25 @@ function nextPostTime() {
   }
 }
 
+function buildRecentPostedTexts(history, limit = 8) {
+  const posted = (history || [])
+    .filter((item) => item && (item.type === 'post' || item.type === 'reply'))
+    .map((item) => item.text)
+    .filter(Boolean)
+
+  const unique = []
+  const seen = new Set()
+  for (const t of posted.reverse()) {
+    const key = String(t)
+    if (seen.has(key)) continue
+    seen.add(key)
+    unique.push(key)
+    if (unique.length >= limit) break
+  }
+
+  return unique
+}
+
 async function generatePostDrafts({ queue, history, state }) {
   const site = process.env.BREADLINES_SITE || 'https://breadlinesmarkets.com'
   const humorLevel = process.env.BOT_HUMOR_LEVEL || 'medium'

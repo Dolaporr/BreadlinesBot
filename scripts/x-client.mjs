@@ -24,6 +24,18 @@ export async function xRequest(url, { method = 'GET', body } = {}) {
   const json = await res.json().catch(() => ({}))
 
   if (!res.ok) {
+    const isDuplicate403 =
+      res.status === 403 &&
+      JSON.stringify(json).toLowerCase().includes('duplicate')
+
+    if (isDuplicate403) {
+      const err = new Error(`Skipped duplicate: ${JSON.stringify(json)}`)
+      err.code = 'DUPLICATE_CONTENT'
+      err.status = res.status
+      err.details = json
+      throw err
+    }
+
     throw new Error(`X API error ${res.status}: ${JSON.stringify(json)}`)
   }
 
