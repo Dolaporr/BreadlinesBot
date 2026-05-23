@@ -83,6 +83,7 @@ Default behavior:
 - `BOT_AUTO_REPLY=false`: no automatic replies
 - `BOT_MENTIONS_ENABLED=true`: can draft replies to mentions
 - `BOT_BACKFILL_MENTIONS=false`: only checks new mentions after the last seen ID
+- `BOT_THREAD_MENTION_SEARCH_ENABLED=true`: also searches for `@BreadLinesBot` inside reply threads
 - `BOT_SEARCH_ENABLED=false`: does not scan broader search by default
 
 Review reply drafts:
@@ -114,6 +115,7 @@ To enable conservative auto-replies to mentions only:
 BOT_AUTO_REPLY=true
 BOT_MENTIONS_ENABLED=true
 BOT_BACKFILL_MENTIONS=false
+BOT_THREAD_MENTION_SEARCH_ENABLED=true
 BOT_SEARCH_ENABLED=false
 BOT_REPLY_SCORE_THRESHOLD=75
 ```

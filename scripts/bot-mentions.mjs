@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { loadEnv } from './env.mjs'
 import { generateJson } from './openai-client.mjs'
-import { createTweet, getMentions, verifyExpectedAccount } from './x-client.mjs'
+import { createTweet, getMentions, searchRecent, verifyExpectedAccount } from './x-client.mjs'
 import { cleanText, isRelevantTweet, isSafeText } from './policy.mjs'
 
 loadEnv()
@@ -18,6 +18,8 @@ fs.mkdirSync(dataDir, { recursive: true })
 const dryRun = String(process.env.TWITTER_DRY_RUN ?? 'true').toLowerCase() !== 'false'
 const mentionsEnabled = String(process.env.BOT_MENTIONS_ENABLED ?? 'true').toLowerCase() !== 'false'
 const backfillMentions = String(process.env.BOT_BACKFILL_MENTIONS ?? 'false').toLowerCase() === 'true'
+const threadMentionSearchEnabled = String(process.env.BOT_THREAD_MENTION_SEARCH_ENABLED ?? 'true').toLowerCase() !== 'false'
+const botUsername = (process.env.TWITTER_EXPECTED_USERNAME || 'BreadLinesBot').replace(/^@/, '')
 
 const replyLimit = Number(process.env.BOT_MAX_REPLIES_PER_CYCLE || 3)
 const replyScoreThreshold = Number(process.env.BOT_REPLY_SCORE_THRESHOLD || 75)
@@ -84,6 +86,7 @@ Voice:
 - Explain MCP/FCFS/breadlines if relevant.
 - Do not impersonate Toly/Solana/Anza/Helius.
 - No financial advice, no price talk, no holder hype.
+- If @dola_porr tags or mentions the bot, acknowledge him casually and respectfully as the creator, but keep it brief and in character.
 - ${includeLink ? `You may include ${site} only if it genuinely helps.` : 'Do not include a link.'}
 - Max 220 characters.
 
@@ -131,9 +134,25 @@ async function main() {
 
   if (mentions?.meta?.newest_id) state.lastMentionId = mentions.meta.newest_id
 
+  let threadMentions
+  if (threadMentionSearchEnabled) {
+    try {
+      const query = `@${botUsername} -from:${botUsername} -is:retweet lang:en`
+      threadMentions = await searchRecent(query, {
+        sinceId: backfillMentions ? undefined : state.lastThreadMentionSearchId,
+      })
+      if (threadMentions?.meta?.newest_id) state.lastThreadMentionSearchId = threadMentions.meta.newest_id
+    } catch (error) {
+      console.error(`Thread mention search skipped: ${error?.message || error}`)
+    }
+  }
+
   const candidates = []
-  for (const tweet of mentions.data || []) {
+  const seenCandidateIds = new Set()
+  for (const tweet of [...(mentions.data || []), ...(threadMentions?.data || [])]) {
     if (!tweet?.text) continue
+    if (seenCandidateIds.has(tweet.id)) continue
+    seenCandidateIds.add(tweet.id)
     if (!isRelevantTweet(tweet.text)) continue
 
     // Avoid replying to same tweet again if already posted
