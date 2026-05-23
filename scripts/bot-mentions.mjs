@@ -3,7 +3,7 @@ import path from 'node:path'
 import { loadEnv } from './env.mjs'
 import { generateJson } from './openai-client.mjs'
 import { createTweet, getMentions, verifyExpectedAccount } from './x-client.mjs'
-import { cleanText, hasLink, isRelevantTweet, isSafeText } from './policy.mjs'
+import { cleanText, isRelevantTweet, isSafeText } from './policy.mjs'
 
 loadEnv()
 
@@ -16,8 +16,6 @@ const statePath = path.join(dataDir, 'bot-state.json')
 fs.mkdirSync(dataDir, { recursive: true })
 
 const dryRun = String(process.env.TWITTER_DRY_RUN ?? 'true').toLowerCase() !== 'false'
-const autoReply = String(process.env.BOT_AUTO_REPLY ?? 'false').toLowerCase() === 'true'
-const approvalMode = String(process.env.BOT_APPROVAL_MODE ?? 'true').toLowerCase() !== 'false'
 const mentionsEnabled = String(process.env.BOT_MENTIONS_ENABLED ?? 'true').toLowerCase() !== 'false'
 const backfillMentions = String(process.env.BOT_BACKFILL_MENTIONS ?? 'false').toLowerCase() === 'true'
 
@@ -34,6 +32,10 @@ const state = fs.existsSync(statePath)
 const replies = fs.existsSync(repliesPath) ? JSON.parse(fs.readFileSync(repliesPath, 'utf8')) : []
 const history = fs.existsSync(historyPath) ? JSON.parse(fs.readFileSync(historyPath, 'utf8')) : []
 const repliedTweets = fs.existsSync(repliedTweetsPath) ? JSON.parse(fs.readFileSync(repliedTweetsPath, 'utf8')) : []
+
+if (!Array.isArray(replies)) throw new Error('replies.json must be an array')
+if (!Array.isArray(history)) throw new Error('history.json must be an array')
+if (!Array.isArray(repliedTweets)) throw new Error('replied-tweets.json must be an array')
 
 if (!mentionsEnabled) {
   console.log('Mentions disabled (BOT_MENTIONS_ENABLED=false). Exiting.')
@@ -110,13 +112,22 @@ If the tweet is irrelevant, hostile, spammy, or not worth replying to, return sh
 }
 
 async function main() {
-  await verifyExpectedAccount()
+  const me = await verifyExpectedAccount()
+  if (!me?.id) throw new Error('verifyExpectedAccount() returned no user id')
 
   const mentionedSinceId = backfillMentions ? undefined : state.lastMentionId
-  const mentions = await getMentions({
-    userId: (await verifyExpectedAccount())?.id,
-    sinceId: mentionedSinceId,
-  })
+
+  let mentions
+  try {
+    mentions = await getMentions({
+      userId: me.id,
+      sinceId: mentionedSinceId,
+    })
+  } catch (error) {
+    console.error(`Mentions fetch skipped: ${error?.message || error}`)
+    writeJson(statePath, state)
+    return
+  }
 
   if (mentions?.meta?.newest_id) state.lastMentionId = mentions.meta.newest_id
 

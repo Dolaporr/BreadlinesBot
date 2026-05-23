@@ -29,11 +29,13 @@ export async function xRequest(url, { method = 'GET', body } = {}) {
       JSON.stringify(json).toLowerCase().includes('duplicate')
 
     if (isDuplicate403) {
-      const err = new Error(`Skipped duplicate: ${JSON.stringify(json)}`)
-      err.code = 'DUPLICATE_CONTENT'
-      err.status = res.status
-      err.details = json
-      throw err
+      // Handle duplicate content locally so it never crashes the cycle.
+      return {
+        skipped: true,
+        reason: 'DUPLICATE_CONTENT',
+        status: res.status,
+        details: json,
+      }
     }
 
     throw new Error(`X API error ${res.status}: ${JSON.stringify(json)}`)
@@ -56,10 +58,22 @@ export async function verifyExpectedAccount() {
   return me.data
 }
 
-export async function createTweet(text, { inReplyToTweetId } = {}) {
-  const body = inReplyToTweetId
-    ? { text, reply: { in_reply_to_tweet_id: inReplyToTweetId } }
-    : { text }
+export async function getTweetById(id, { expansions } = {}) {
+  const tweetId = String(id)
+  if (!tweetId) throw new Error('getTweetById requires a tweet id')
+
+  const url = new URL(`https://api.x.com/2/tweets/${tweetId}`)
+  url.searchParams.set('tweet.fields', 'author_id,created_at,conversation_id')
+  url.searchParams.set('expansions', expansions || 'author_id')
+  return xRequest(url.toString())
+}
+
+export async function createTweet(text, { inReplyToTweetId, quoteTweetId } = {}) {
+  const body = {
+    text,
+    ...(inReplyToTweetId ? { reply: { in_reply_to_tweet_id: inReplyToTweetId } } : {}),
+    ...(quoteTweetId ? { quote_tweet_id: String(quoteTweetId) } : {}),
+  }
 
   return xRequest('https://api.x.com/2/tweets', {
     method: 'POST',

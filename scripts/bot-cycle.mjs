@@ -220,20 +220,8 @@ async function collectReplyDrafts({ me, state, replies, repliedTweets }) {
     }
   }
 
-  if (searchEnabled) {
-    const raw = process.env.TWITTER_SEARCH_KEYWORDS || 'MCP,FCFS,breadlines,Solana'
-    const terms = raw.split(',').map((term) => term.trim()).filter(Boolean).slice(0, 5)
-    const query = `(${terms.map((term) => `"${term}"`).join(' OR ')}) -is:retweet lang:en`
-    try {
-      const results = await searchRecent(query, { sinceId: state.lastSearchId })
-      for (const tweet of results.data || []) {
-        if (tweet.author_id !== me.id) candidates.push({ source: 'search', tweet })
-      }
-      if (results.meta?.newest_id) state.lastSearchId = results.meta.newest_id
-    } catch (error) {
-      console.error(`Search fetch skipped: ${error.message}`)
-    }
-  }
+  // Replies: only engage tweets where the bot was explicitly mentioned (via getMentions()).
+  // General search results can fail with "not allowed to reply" and should not be attempted.
 
   const additions = []
   const linkBudget = ((state.replyCount || 0) + 1) % linkEvery === 0
@@ -429,33 +417,64 @@ async function maybePost({ queue, state, history }) {
     return
   }
 
-  let nextPost = queue.find((item) => item.approved && !item.posted && isSafeText(item.text))
+  const candidates = queue
+    .filter((item) => !item.posted && isSafeText(item.text))
+    .filter((item) => item.approved || (autoPost && !approvalMode))
 
-  if (!nextPost && autoPost && !approvalMode) {
-    nextPost = queue.find((item) => !item.posted && isSafeText(item.text))
-    if (nextPost) nextPost.approved = true
-  }
-
-  if (!nextPost) {
+  if (!candidates.length) {
     console.log('No approved post ready.')
     return
   }
 
   if (dryRun) {
     console.log('DRY RUN post:')
-    console.log(nextPost.text)
+    console.log(candidates[0].text)
     return
   }
 
   await verifyExpectedAccount()
-  const response = await createTweet(nextPost.text)
-  nextPost.posted = true
-  nextPost.postedAt = new Date().toISOString()
-  nextPost.xResponse = response
-  state.postCount = (state.postCount || 0) + 1
-  Object.assign(state, nextPostTime())
-  history.push({ ...nextPost, type: 'post' })
-  console.log(`Posted ${nextPost.id}; next window ${state.nextPostAt}`)
+
+  for (const nextPost of candidates) {
+    try {
+      // Mark approved if we are auto-posting drafts
+      if (!nextPost.approved && autoPost && !approvalMode) nextPost.approved = true
+
+      const response = await createTweet(nextPost.text)
+      if (response?.skipped === true) {
+        console.log('Skipped duplicate, trying next draft')
+        continue
+      }
+
+      nextPost.posted = true
+      nextPost.postedAt = new Date().toISOString()
+      nextPost.xResponse = response
+      state.postCount = (state.postCount || 0) + 1
+      Object.assign(state, nextPostTime())
+      history.push({ ...nextPost, type: 'post' })
+      console.log(`Posted ${nextPost.id}; next window ${state.nextPostAt}`)
+      return
+    } catch (error) {
+      // createTweet() throws err.code='DUPLICATE_CONTENT' on duplicate 403.
+      // Fully swallow duplicates so the cycle never exits with code 1.
+      const code = String(error?.code || '')
+      const msg = String(error?.message || error || '')
+      const isDuplicate =
+        code === 'DUPLICATE_CONTENT' ||
+        msg.includes('DUPLICATE_CONTENT') ||
+        /duplicate/i.test(msg)
+
+      if (isDuplicate) {
+        console.log('Skipped duplicate, trying next draft')
+        // Important: DO NOT rethrow.
+        continue
+      }
+
+      // Non-duplicate errors should still be surfaced.
+      throw error
+    }
+  }
+
+  console.log('No post posted (all drafts were duplicates or failed safety checks).')
 }
 
 async function maybeReply({ replies, state, history, repliedTweets }) {
@@ -477,27 +496,23 @@ async function maybeReply({ replies, state, history, repliedTweets }) {
     }
 
     await verifyExpectedAccount()
-    const response = await createTweet(reply.text, { inReplyToTweetId: reply.targetTweetId })
-    reply.posted = true
-    reply.postedAt = new Date().toISOString()
-    reply.xResponse = response
-    state.replyCount = (state.replyCount || 0) + 1
-    history.push({ ...reply, type: 'reply' })
-    
-    // Track this reply in persistent storage to avoid duplicates
-    if (reply.source === 'search' && reply.authorId) {
-      repliedTweets.push({
-        tweetId: reply.targetTweetId,
-        authorId: reply.authorId,
-        repliedAt: Date.now(),
-      })
-      // Keep only last 1000 replied tweets to avoid bloat
-      if (repliedTweets.length > 1000) {
-        repliedTweets.splice(0, repliedTweets.length - 1000)
+    try {
+      const response = await createTweet(reply.text, { inReplyToTweetId: reply.targetTweetId })
+      reply.posted = true
+      reply.postedAt = new Date().toISOString()
+      reply.xResponse = response
+      state.replyCount = (state.replyCount || 0) + 1
+      history.push({ ...reply, type: 'reply' })
+      console.log(`Replied ${reply.id}`)
+    } catch (error) {
+      const msg = String(error?.message || error || '')
+      // Specifically ignore 403 "not allowed to reply"
+      if (msg.includes('403') && /not allowed to reply/i.test(msg)) {
+        console.log('Skipped reply — not in conversation')
+        continue
       }
+      throw error
     }
-    
-    console.log(`Replied ${reply.id}`)
   }
 }
 

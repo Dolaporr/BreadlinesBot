@@ -1,0 +1,34 @@
+{
+  "seed_tweets": [
+    {
+      "id": "1760157951955030428",
+      "author": "toly",
+      "action": "quote",
+      "done": false
+    },
+    {
+      "id": "1823152092657365165",
+      "author": "toly",
+      "action": "quote",
+      "done": false
+    },
+    {
+      "id": "1849498745387499694",
+      "author": "toly",
+      "action": "quote",
+      "done": false
+    },
+    {
+      "id": "1872728719670034795",
+      "author": "toly",
+      "action": "quote",
+      "done": false
+    },
+    {
+      "id": "1872866106849063150",
+      "author": "toly",
+      "action": "quote",
+      "done": false
+    }
+  ]
+}

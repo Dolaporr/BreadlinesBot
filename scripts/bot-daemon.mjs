@@ -47,6 +47,18 @@ async function runReplyLoop() {
   }
 }
 
-console.log('BreadLines bot daemon started (split post + reply timers).')
+async function runSeedWatchLoop() {
+  console.log(`Seed/watch timer active. Cycle window: ${minMinutes}-${maxMinutes} minutes.`)
+  while (true) {
+    await spawnNode('./scripts/seed-watch.mjs')
+    const next = delayMs()
+    const at = new Date(Date.now() + next.ms).toLocaleString()
+    console.log(`Next seed/watch run in ${next.minutes} minutes (${at}).`)
+    await new Promise((resolve) => setTimeout(resolve, next.ms))
+  }
+}
+
+console.log('BreadLines bot daemon started (post + reply + seed/watch timers).')
 void runPostLoop()
 void runReplyLoop()
+void runSeedWatchLoop()
