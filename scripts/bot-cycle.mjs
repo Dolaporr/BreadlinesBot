@@ -22,6 +22,7 @@ const autoReply = String(process.env.BOT_AUTO_REPLY ?? 'false').toLowerCase() ==
 const approvalMode = String(process.env.BOT_APPROVAL_MODE ?? 'true').toLowerCase() !== 'false'
 const mentionsEnabled = String(process.env.BOT_MENTIONS_ENABLED ?? 'true').toLowerCase() !== 'false'
 const searchEnabled = String(process.env.BOT_SEARCH_ENABLED ?? 'false').toLowerCase() === 'true'
+const receiptsEnabled = String(process.env.BOT_RECEIPTS_ENABLED ?? 'true').toLowerCase() !== 'false'
 const backfillMentions = String(process.env.BOT_BACKFILL_MENTIONS ?? 'false').toLowerCase() === 'true'
 const tolySignalEnabled = String(process.env.BOT_TOLY_SIGNAL_ENABLED ?? 'false').toLowerCase() === 'true'
 const tolyHandle = (process.env.BOT_TOLY_HANDLE || 'toly').replace(/^@/, '')
@@ -42,6 +43,8 @@ const targetAccounts = {
 }
 
 function shouldTagAccount(text, type = 'original') {
+  if (String(process.env.BOT_ALLOW_ACCOUNT_TAGGING ?? 'false').toLowerCase() !== 'true') return null
+
   // Don't tag in replies to general users (only in original posts or quote tweets)
   if (type === 'reply') return null
 
@@ -103,7 +106,7 @@ async function generatePostDrafts({ queue, history, state }) {
     .filter(Boolean)
 
   const shouldLink = ((state.postCount || 0) + 1) % linkEvery === 0
-  const prompt = `Generate 6 candidate X posts for BreadLinesBot.
+  const prompt = `Generate 6 candidate X posts for Breadlinebot.
 
 Voice:
 - Smart Solana market-structure account with ${humorLevel} GenZ humor.
@@ -155,7 +158,7 @@ Return JSON only:
 
 async function generateReply({ tweet, includeLink }) {
   const site = process.env.BREADLINES_SITE || 'https://breadlinesmarkets.com'
-  const prompt = `Write one possible reply for BreadLinesBot.
+  const prompt = `Write one possible reply for Breadlinebot.
 
 Original tweet:
 ${tweet.text}
@@ -230,6 +233,9 @@ async function collectReplyDrafts({ me, state, replies, repliedTweets }) {
     if (additions.length >= replyLimit) break
     if (seenTweetIds.has(candidate.tweet.id)) continue
     if (!isRelevantTweet(candidate.tweet.text)) continue
+
+    const receiptIntent = analyzeTweetForReceipt(candidate.tweet.text)
+    if (receiptIntent.txSignature) continue
     
     // For search results, check author cooldown
     if (candidate.source === 'search' && recentlyRepliedAuthors.has(candidate.tweet.author_id)) {
@@ -268,15 +274,17 @@ async function collectReplyDrafts({ me, state, replies, repliedTweets }) {
 
 async function collectTxReceiptReplies({ me, state, replies }) {
   const site = process.env.BREADLINES_SITE || 'https://breadlinesmarkets.com'
+  const apiUrl = process.env.BREADLINES_RECEIPT_API_URL
+  const urlTemplate = process.env.BREADLINES_RECEIPT_URL_TEMPLATE
   const seenTweetIds = new Set(replies.map((reply) => reply.targetTweetId))
   const additions = []
 
-  if (!mentionsEnabled) return additions
+  if (!mentionsEnabled || !receiptsEnabled) return additions
 
   try {
     const mentions = await getMentions({
       userId: me.id,
-      sinceId: backfillMentions ? undefined : state.lastMentionIdForReceipt,
+      sinceId: backfillMentions ? undefined : state.lastReceiptMentionId,
     })
 
     for (const tweet of mentions.data || []) {
@@ -285,8 +293,18 @@ async function collectTxReceiptReplies({ me, state, replies }) {
       const { hasReceipt, txSignature } = analyzeTweetForReceipt(tweet.text)
       if (!hasReceipt || !txSignature) continue
 
-      // Generate receipt
-      const generated = generateTxReceipt(txSignature, { site, includeLink: true })
+      let generated
+      try {
+        generated = await generateTxReceipt(txSignature, {
+          site,
+          apiUrl,
+          urlTemplate,
+          includeLink: String(process.env.BOT_RECEIPT_REPLY_LINK ?? 'true').toLowerCase() !== 'false',
+        })
+      } catch (error) {
+        console.error(`Receipt build skipped for ${tweet.id}: ${error.message}`)
+        continue
+      }
 
       if (!generated.shouldReply || !isSafeText(generated.text)) continue
 
@@ -294,19 +312,23 @@ async function collectTxReceiptReplies({ me, state, replies }) {
         id: `receipt-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
         targetTweetId: tweet.id,
         targetText: tweet.text,
+        authorId: tweet.author_id,
         txSignature,
         text: generated.text,
         reason: generated.reason,
-        source: 'tx-receipt',
-        approved: !approvalMode, // Auto-approve receipts unless in strict approval mode
+        score: 100,
+        receiptSummary: generated.summary,
+        source: 'receipt-mention',
+        approved: false,
         posted: false,
+        requiresHumanApproval: true,
         createdAt: new Date().toISOString(),
       })
 
       seenTweetIds.add(tweet.id)
     }
 
-    if (mentions.meta?.newest_id) state.lastMentionIdForReceipt = mentions.meta.newest_id
+    if (mentions.meta?.newest_id) state.lastReceiptMentionId = mentions.meta.newest_id
   } catch (error) {
     console.error(`TX receipt collection skipped: ${error.message}`)
   }
@@ -349,7 +371,7 @@ async function collectTolySignalDrafts({ queue, history, state }) {
   const existing = new Set(queue.map((item) => item.text))
 
   for (const tweet of tweets) {
-    const prompt = `BreadLinesBot watches @${tolyHandle} for market-structure ideas.
+    const prompt = `Breadlinebot watches @${tolyHandle} for market-structure ideas.
 
 Source tweet from @${tolyHandle}:
 ${tweet.text}

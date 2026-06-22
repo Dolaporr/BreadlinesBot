@@ -24,7 +24,7 @@ const recent = [...queue, ...history]
   .map((item) => item.text)
   .filter(Boolean)
 
-const prompt = `Generate 8 candidate X posts for BreadLinesBot.
+const prompt = `Generate 8 candidate X posts for Breadlinebot.
 
 Brand:
 - $BREADLINES / BreadLinesMarkets

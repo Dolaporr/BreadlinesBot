@@ -89,7 +89,7 @@ async function maybeEngageWatchTweet({ tweet, mode, recentPostedTexts, engagedSe
   if (!isRelevantTweet(tweet.text)) return false
 
   const includeLink = false
-  const quoteOrReplyPrompt = `You are BreadLinesBot on Twitter/X. Generate exactly one response.
+  const quoteOrReplyPrompt = `You are Breadlinebot on Twitter/X. Generate exactly one response.
 
 Tweet:
 ${tweet.text}
@@ -177,7 +177,7 @@ async function runSeedsOnly() {
     sourceTweetText: sourceText,
   }
 
-  const prompt = `Quote this tweet in exactly one dry one-liner using the BreadLinesBot bread line / MCP-FBO / FCFS satire frame.
+  const prompt = `Quote this tweet in exactly one dry one-liner using the Breadlinebot bread line / MCP-FBO / FCFS satire frame.
 
 Tweet to quote:
 ${sourceText}

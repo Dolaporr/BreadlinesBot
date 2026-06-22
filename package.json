@@ -12,6 +12,7 @@
     "draft:ai": "node ./scripts/ai-draft-posts.mjs",
     "bot:cycle": "node ./scripts/bot-cycle.mjs",
     "bot:daemon": "node ./scripts/bot-daemon.mjs",
+    "mentions:receipt": "node ./scripts/bot-mentions.mjs",
     "replies:show": "node ./scripts/show-replies.mjs",
     "reply:approved": "node ./scripts/post-approved-reply.mjs",
     "post:approved": "node ./scripts/post-approved.mjs",
@@ -24,6 +25,7 @@
     "verify:x": "node ./scripts/verify-account.mjs",
     "oauth:bot:start": "node ./scripts/oauth-pin-start.mjs",
     "oauth:bot:finish": "node ./scripts/oauth-pin-finish.mjs",
-    "check:character": "node -e \"JSON.parse(require('fs').readFileSync('./characters/breadlines-bot.character.json','utf8')); console.log('character json ok')\""
+    "check:character": "node -e \"JSON.parse(require('fs').readFileSync('./characters/breadlines-bot.character.json','utf8')); console.log('character json ok')\"",
+    "receipt:test": "node ./scripts/test-tx-receipt.mjs"
   }
 }

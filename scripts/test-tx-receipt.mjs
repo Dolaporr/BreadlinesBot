@@ -1,132 +1,62 @@
 #!/usr/bin/env node
 
-/**
- * test-tx-receipt.mjs - Validate TX receipt module
- * 
- * Usage: node scripts/test-tx-receipt.mjs
- */
-
-import { 
-  TX_SIGNATURE_PATTERN, 
-  extractTxSignature, 
-  generateTxReceipt,
-  analyzeTweetForReceipt 
+import {
+  TX_SIGNATURE_PATTERN,
+  analyzeTweetForReceipt,
+  buildReceiptApiUrl,
+  buildReceiptReplyFromData,
+  extractTxSignature,
 } from './tx-receipt.mjs'
 
-console.log('🧪 Testing TX Receipt Module\n')
+function assert(condition, message) {
+  if (!condition) throw new Error(message)
+}
 
-// Test 1: TX Signature Pattern
-console.log('Test 1: TX Signature Pattern')
-// Real Solana TX format: base58, 64-88 chars
-// Valid base58 alphabet: 123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz
-const testCases = [
-  {
-    sig: '11111111111111111111111111111111111111111111111111111111111111111',
-    valid: true,
-    label: 'Valid 65-char sig',
-  },
-  {
-    sig: '1111111111111111111111111111111111111111111111111111111111111111',
-    valid: true,
-    label: 'Valid 64-char sig',
-  },
-  {
-    sig: 'ABCDEFGHJKLMNPQRSTUVWXYZ1234567abcdefghijkmnopqrstuvwxyz1234567ABCDEFGHJKLMNPQRST',
-    valid: true,
-    label: 'Valid 88-char sig',
-  },
-  {
-    sig: 'G000000000000000000000000000000000000000000000000000000000000000',
-    valid: false,
-    label: 'Invalid: contains G (not base58)',
-  },
-  {
-    sig: '0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
-    valid: false,
-    label: 'Invalid: starts with 0',
-  },
-  {
-    sig: '123456789',
-    valid: false,
-    label: 'Invalid: too short',
-  },
-]
+const sampleSignature =
+  '4NBrMsedNEtTzYBTfQf73Z8m9951WYP68shBLi7PTFSZsQ795i2QLGEEMgP3iX2qq4Ku2H1jQjWTZNizNKrQAa56'
 
-testCases.forEach(({ sig, valid, label }) => {
-  const result = TX_SIGNATURE_PATTERN.test(sig)
-  const status = result === valid ? '✅' : '❌'
-  console.log(`  ${status} ${label}: ${sig.slice(0, 20)}...`)
-})
+console.log('Testing Breadlines receipt helpers')
 
-// Test 2: Extract Signature
-console.log('\nTest 2: Extract Signature from Text')
-const extractTests = [
-  {
-    text: 'Check this tx: 1111111111111111111111111111111111111111111111111111111111111111',
-    expected: '1111111111111111111111111111111111111111111111111111111111111111',
-    label: 'Sig in sentence',
-  },
-  {
-    text: 'Multiple? 1111111111111111111111111111111111111111111111111111111111111111 and AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
-    expected: '1111111111111111111111111111111111111111111111111111111111111111',
-    label: 'First of multiple sigs',
-  },
-  {
-    text: 'No sig here, just text',
-    expected: null,
-    label: 'No sig',
-  },
-]
+assert(TX_SIGNATURE_PATTERN.test(sampleSignature), 'sample signature should be valid')
+assert(!TX_SIGNATURE_PATTERN.test('0'.repeat(64)), 'base58-invalid signature should fail')
+assert(!TX_SIGNATURE_PATTERN.test('abc123'), 'short signature should fail')
 
-extractTests.forEach(({ text, expected, label }) => {
-  const result = extractTxSignature(text)
-  const status = result === expected ? '✅' : '❌'
-  console.log(`  ${status} ${label}`)
-  if (result !== expected) {
-    console.log(`     Expected: ${expected}, Got: ${result}`)
-  }
-})
+const extracted = extractTxSignature(`@Breadlinebot explain this tx ${sampleSignature}`)
+assert(extracted === sampleSignature, 'extractTxSignature should find the sample signature')
 
-// Test 3: Generate Receipt
-console.log('\nTest 3: Generate Receipt')
-const receipt = generateTxReceipt('1111111111111111111111111111111111111111111111111111111111111111', {
+const noSignature = extractTxSignature('@Breadlinebot what happened here?')
+assert(noSignature === null, 'extractTxSignature should return null when absent')
+
+const analysis = analyzeTweetForReceipt(`receipt please ${sampleSignature}`)
+assert(analysis.hasReceipt === true, 'analysis should detect receipt intent')
+assert(analysis.txSignature === sampleSignature, 'analysis should include signature')
+
+assert(
+  buildReceiptApiUrl({ site: 'https://breadlinesmarkets.com/' }) === 'https://breadlinesmarkets.com/api/receipt',
+  'buildReceiptApiUrl should normalize trailing slash',
+)
+
+const reply = buildReceiptReplyFromData({
+  signature: sampleSignature,
+  status: 'failed',
+  feePaidSol: 0.000024211,
+  computeUnitsConsumed: 128702,
+  slotPressure: { label: 'high' },
+  percolatorLens: {
+    queueSensitive: { level: 'high' },
+    priceSensitive: { level: 'high' },
+    riskOracleSensitive: { level: 'medium' },
+  },
+}, {
   site: 'https://breadlinesmarkets.com',
   includeLink: true,
 })
 
-console.log(`  ✅ Receipt generated:`)
-console.log(`     Should reply: ${receipt.shouldReply}`)
-console.log(`     Reason: ${receipt.reason}`)
-console.log(`     Length: ${receipt.text.length} chars`)
-console.log(`     Preview:\n${receipt.text.split('\n').map((l) => '       ' + l).join('\n')}`)
+assert(reply.shouldReply === true, 'reply should be enabled')
+assert(reply.text.includes('Observed: failed'), 'reply should include observed status')
+assert(reply.text.includes('Estimated pressure: high'), 'reply should label estimated pressure')
+assert(reply.text.includes('Conceptual signals'), 'reply should label conceptual signals')
+assert(reply.text.length <= 280, 'reply should fit X character limit')
+assert(reply.summary.status === 'failed', 'summary should include status')
 
-// Test 4: Analyze Tweet
-console.log('\nTest 4: Analyze Tweet for Receipt')
-const analyzeTests = [
-  {
-    text: '@BreadLinesBot can you parse this tx? 1111111111111111111111111111111111111111111111111111111111111111',
-    shouldHave: true,
-    label: 'Tweet with tx',
-  },
-  {
-    text: '@BreadLinesBot can you show me the receipt for my signature?',
-    shouldHave: true,
-    label: 'Receipt keyword (no sig)',
-  },
-  {
-    text: '@BreadLinesBot what do you think about MCP?',
-    shouldHave: false,
-    label: 'No tx or receipt keyword',
-  },
-]
-
-analyzeTests.forEach(({ text, shouldHave, label }) => {
-  const { hasReceipt, txSignature } = analyzeTweetForReceipt(text)
-  const status = hasReceipt === shouldHave ? '✅' : '❌'
-  console.log(`  ${status} ${label}`)
-  if (txSignature) {
-    console.log(`     TX: ${txSignature.slice(0, 20)}...`)
-  }
-})
-
-console.log('\n✅ All tests complete!')
+console.log('Receipt helper tests passed')

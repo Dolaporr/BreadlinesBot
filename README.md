@@ -83,8 +83,10 @@ Default behavior:
 - `BOT_AUTO_REPLY=false`: no automatic replies
 - `BOT_MENTIONS_ENABLED=true`: can draft replies to mentions
 - `BOT_BACKFILL_MENTIONS=false`: only checks new mentions after the last seen ID
-- `BOT_THREAD_MENTION_SEARCH_ENABLED=true`: also searches for `@BreadLinesBot` inside reply threads
+- `BOT_THREAD_MENTION_SEARCH_ENABLED=true`: also searches for `@Breadlinebot` inside reply threads
 - `BOT_SEARCH_ENABLED=false`: does not scan broader search by default
+- `BOT_RECEIPTS_ENABLED=true`: turns tx-signature mentions into receipt drafts
+- `BOT_ALLOW_ACCOUNT_TAGGING=false`: never tags large accounts by default
 
 Review reply drafts:
 
@@ -98,7 +100,47 @@ Approve one reply in `data/replies.json`, then dry-run:
 npm run reply:approved
 ```
 
-For limited auto mode later, change only these after a safe test period:
+## Receipt Assistant Mode
+
+This is the safest current bot job.
+
+```txt
+@Breadlinebot + Solana tx signature
+  -> build a real Breadlines receipt
+  -> save an unapproved draft in data/replies.json
+  -> operator reviews and approves manually
+```
+
+Run the fast mention receipt pass:
+
+```bash
+npm run mentions:receipt
+npm run replies:show
+```
+
+Approve one draft in `data/replies.json`:
+
+```json
+"approved": true
+```
+
+Then dry-run or post the approved reply:
+
+```bash
+npm run reply:approved
+```
+
+Receipt replies use:
+
+- observed status, fee, and compute units from the Breadlines receipt API
+- estimated pressure, clearly labeled
+- conceptual queue/price signals, clearly labeled
+
+They do not invent savings, blame a protocol, or claim what Percolator would have done.
+
+The standalone mention timer `npm run mentions:receipt` is draft-only. It does not call the X post endpoint.
+
+Avoid auto mode for now. If you later test it, change only these after a safe manual period:
 
 ```env
 BOT_APPROVAL_MODE=false

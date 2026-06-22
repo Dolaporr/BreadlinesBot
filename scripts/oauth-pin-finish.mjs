@@ -61,7 +61,7 @@ function upsert(key, value) {
 
 upsert('TWITTER_ACCESS_TOKEN', data.oauth_token)
 upsert('TWITTER_ACCESS_TOKEN_SECRET', data.oauth_token_secret)
-upsert('TWITTER_EXPECTED_USERNAME', data.screen_name || 'BreadLinesBot')
+upsert('TWITTER_EXPECTED_USERNAME', data.screen_name || 'Breadlinebot')
 upsert('TWITTER_DRY_RUN', 'true')
 
 fs.writeFileSync(envPath, envText)
