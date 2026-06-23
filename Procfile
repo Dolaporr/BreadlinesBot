@@ -1,1 +1,1 @@
-worker: npm run bot:daemon
+worker: npm run mentions:receipt
