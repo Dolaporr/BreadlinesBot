@@ -109,6 +109,11 @@ class JsonDraftStore {
     return this.readAll().some((draft) => draft.targetTweetId === tweetId && !draft.posted)
   }
 
+  async hasForTweet(tweetId) {
+    if (!tweetId) return false
+    return this.readAll().some((draft) => draft.targetTweetId === tweetId)
+  }
+
   async addDrafts(drafts) {
     const all = this.readAll()
     const inserted = []
@@ -221,6 +226,15 @@ class PostgresDraftStore {
     if (!tweetId) return false
     const result = await this.pool.query(
       `SELECT 1 FROM ${tableName} WHERE target_tweet_id = $1 AND posted = false LIMIT 1`,
+      [tweetId],
+    )
+    return result.rowCount > 0
+  }
+
+  async hasForTweet(tweetId) {
+    if (!tweetId) return false
+    const result = await this.pool.query(
+      `SELECT 1 FROM ${tableName} WHERE target_tweet_id = $1 LIMIT 1`,
       [tweetId],
     )
     return result.rowCount > 0

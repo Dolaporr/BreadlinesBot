@@ -154,6 +154,25 @@ npm run reply:approved
 
 Keep `TWITTER_DRY_RUN=true` while testing. `reply:approved` will print the reply it would post without sending it.
 
+## Receipt Auto-Reply
+
+If you want the bot to reply as soon as it is tagged with a valid transaction signature, use the narrow receipt-only auto mode:
+
+```env
+BOT_RECEIPT_AUTO_REPLY=true
+TWITTER_DRY_RUN=false
+BOT_AUTO_REPLY=false
+BOT_AUTO_POST=false
+BOT_SEARCH_ENABLED=false
+BOT_TOLY_SIGNAL_ENABLED=false
+BOT_ALLOW_ACCOUNT_TAGGING=false
+BOT_THREAD_MENTION_SEARCH_ENABLED=false
+```
+
+This does not turn on general AI replies. It only auto-posts receipt replies for direct `@Breadlinebot` mentions that contain a valid Solana transaction signature. Each auto-reply is still saved into the Draft Inbox as a posted record.
+
+With `TWITTER_DRY_RUN=true`, the bot prints the reply it would send and saves the record without posting.
+
 Receipt replies use:
 
 - observed status, fee, and compute units from the Breadlines receipt API
@@ -162,31 +181,17 @@ Receipt replies use:
 
 They do not invent savings, blame a protocol, or claim what Percolator would have done.
 
-The standalone mention timer `npm run mentions:receipt` is draft-only. It does not call the X post endpoint.
+The standalone mention timer `npm run mentions:receipt` is draft-only unless `BOT_RECEIPT_AUTO_REPLY=true` and `TWITTER_DRY_RUN=false`.
 
-Avoid auto mode for now. If you later test it, change only these after a safe manual period:
-
-```env
-BOT_APPROVAL_MODE=false
-BOT_AUTO_POST=true
-BOT_AUTO_REPLY=true
-TWITTER_DRY_RUN=false
-```
-
-Keep `BOT_SEARCH_ENABLED=false` until mentions are behaving well.
-
-To enable conservative auto-replies to mentions only:
+Do not use the broad legacy auto-reply mode for receipts. Keep these off:
 
 ```env
-BOT_AUTO_REPLY=true
-BOT_MENTIONS_ENABLED=true
-BOT_BACKFILL_MENTIONS=false
-BOT_THREAD_MENTION_SEARCH_ENABLED=true
+BOT_AUTO_REPLY=false
+BOT_AUTO_POST=false
 BOT_SEARCH_ENABLED=false
-BOT_REPLY_SCORE_THRESHOLD=75
 ```
 
-For one catch-up cycle after enabling replies, set `BOT_BACKFILL_MENTIONS=true`, deploy, wait for one cycle, then set it back to `false`.
+Use `BOT_RECEIPT_AUTO_REPLY=true` only when you want direct transaction-signature mentions to receive automatic receipt replies.
 
 ## Toly Signal Mode
 

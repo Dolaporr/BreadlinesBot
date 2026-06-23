@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { loadEnv } from './env.mjs'
-import { getMentions, searchRecent, verifyExpectedAccount } from './x-client.mjs'
+import { createTweet, getMentions, searchRecent, verifyExpectedAccount } from './x-client.mjs'
 import { isSafeText } from './policy.mjs'
 import { analyzeTweetForReceipt, generateTxReceipt } from './tx-receipt.mjs'
 import { createDraftStore } from './draft-store.mjs'
@@ -15,6 +15,8 @@ fs.mkdirSync(dataDir, { recursive: true })
 
 const mentionsEnabled = String(process.env.BOT_MENTIONS_ENABLED ?? 'true').toLowerCase() !== 'false'
 const receiptsEnabled = String(process.env.BOT_RECEIPTS_ENABLED ?? 'true').toLowerCase() !== 'false'
+const dryRun = String(process.env.TWITTER_DRY_RUN ?? 'true').toLowerCase() !== 'false'
+const receiptAutoReply = String(process.env.BOT_RECEIPT_AUTO_REPLY ?? 'false').toLowerCase() === 'true'
 const backfillMentions = String(process.env.BOT_BACKFILL_MENTIONS ?? 'false').toLowerCase() === 'true'
 const threadMentionSearchEnabled = String(process.env.BOT_THREAD_MENTION_SEARCH_ENABLED ?? 'true').toLowerCase() !== 'false'
 const botUsername = (process.env.TWITTER_EXPECTED_USERNAME || 'Breadlinebot').replace(/^@/, '')
@@ -61,11 +63,16 @@ async function buildDraft(tweet) {
     score: 100,
     receiptSummary: generated.summary,
     source: 'receipt-mention',
+    mentionSource: tweet.mentionSource || 'mention',
     approved: false,
     posted: false,
     requiresHumanApproval: true,
     createdAt: new Date().toISOString(),
   }
+}
+
+function canAutoReply(draft) {
+  return receiptAutoReply && draft.mentionSource === 'mention' && draft.txSignature && isSafeText(draft.text)
 }
 
 async function main() {
@@ -85,7 +92,7 @@ async function main() {
       sinceId: backfillMentions ? undefined : state.lastReceiptMentionId,
     })
 
-    for (const tweet of mentions.data || []) candidates.push(tweet)
+    for (const tweet of mentions.data || []) candidates.push({ ...tweet, mentionSource: 'mention' })
     if (mentions?.meta?.newest_id) state.lastReceiptMentionId = mentions.meta.newest_id
   } catch (error) {
     console.error(`Mentions fetch skipped: ${error?.message || error}`)
@@ -98,7 +105,9 @@ async function main() {
         sinceId: backfillMentions ? undefined : state.lastReceiptThreadMentionSearchId,
       })
 
-      for (const tweet of threadMentions.data || []) candidates.push(tweet)
+      for (const tweet of threadMentions.data || []) {
+        candidates.push({ ...tweet, mentionSource: 'thread-search' })
+      }
       if (threadMentions?.meta?.newest_id) {
         state.lastReceiptThreadMentionSearchId = threadMentions.meta.newest_id
       }
@@ -113,12 +122,35 @@ async function main() {
     if (!tweet?.id || !tweet?.text) continue
     if (seenCandidateIds.has(tweet.id)) continue
     seenCandidateIds.add(tweet.id)
-    if (await draftStore.hasUnpostedForTweet(tweet.id)) continue
+    if (await draftStore.hasForTweet(tweet.id)) continue
     if (additions.length >= receiptLimit) break
 
     try {
       const draft = await buildDraft(tweet)
-      if (draft) additions.push(draft)
+      if (!draft) continue
+
+      if (canAutoReply(draft)) {
+        if (dryRun) {
+          draft.autoReplyDryRun = true
+          console.log(`DRY RUN receipt auto-reply for ${tweet.id}:`)
+          console.log(draft.text)
+        } else {
+          try {
+            const response = await createTweet(draft.text, { inReplyToTweetId: draft.targetTweetId })
+            draft.approved = true
+            draft.posted = true
+            draft.requiresHumanApproval = false
+            draft.postedAt = new Date().toISOString()
+            draft.xResponse = response
+            console.log(`Auto-replied with receipt draft ${draft.id}`)
+          } catch (error) {
+            draft.autoReplyError = String(error?.message || error)
+            console.error(`Auto-reply failed for ${tweet.id}; saving pending draft instead: ${draft.autoReplyError}`)
+          }
+        }
+      }
+
+      additions.push(draft)
     } catch (error) {
       console.error(`Receipt draft skipped for ${tweet.id}: ${error?.message || error}`)
     }
@@ -133,7 +165,10 @@ async function main() {
     return
   }
 
-  console.log(`Created ${inserted.length} tx receipt draft(s). Review with: npm run replies:show`)
+  const postedCount = inserted.filter((draft) => draft.posted).length
+  const pendingCount = inserted.length - postedCount
+  console.log(`Created ${inserted.length} tx receipt record(s): ${postedCount} posted, ${pendingCount} pending.`)
+  if (pendingCount > 0) console.log('Review pending drafts with: npm run replies:show')
   for (const draft of inserted) {
     console.log(`- ${draft.id} for ${draft.txSignature.slice(0, 8)}...${draft.txSignature.slice(-6)}`)
   }
