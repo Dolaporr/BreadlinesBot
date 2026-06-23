@@ -4,11 +4,11 @@ import { loadEnv } from './env.mjs'
 import { getMentions, searchRecent, verifyExpectedAccount } from './x-client.mjs'
 import { isSafeText } from './policy.mjs'
 import { analyzeTweetForReceipt, generateTxReceipt } from './tx-receipt.mjs'
+import { createDraftStore } from './draft-store.mjs'
 
 loadEnv()
 
 const dataDir = path.resolve('data')
-const repliesPath = path.join(dataDir, 'replies.json')
 const statePath = path.join(dataDir, 'bot-state.json')
 
 fs.mkdirSync(dataDir, { recursive: true })
@@ -28,10 +28,6 @@ const state = fs.existsSync(statePath)
   ? JSON.parse(fs.readFileSync(statePath, 'utf8'))
   : { postCount: 0, replyCount: 0 }
 
-const replies = fs.existsSync(repliesPath) ? JSON.parse(fs.readFileSync(repliesPath, 'utf8')) : []
-
-if (!Array.isArray(replies)) throw new Error('replies.json must be an array')
-
 if (!mentionsEnabled || !receiptsEnabled) {
   console.log('Receipt mention drafting disabled. Exiting.')
   process.exit(0)
@@ -39,10 +35,6 @@ if (!mentionsEnabled || !receiptsEnabled) {
 
 function writeJson(file, value) {
   fs.writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`)
-}
-
-function alreadyDrafted(tweetId) {
-  return replies.some((reply) => reply.targetTweetId === tweetId && !reply.posted)
 }
 
 async function buildDraft(tweet) {
@@ -77,6 +69,10 @@ async function buildDraft(tweet) {
 }
 
 async function main() {
+  const draftStore = createDraftStore()
+  await draftStore.init()
+  console.log(`Draft store: ${draftStore.label}`)
+
   const me = await verifyExpectedAccount()
   if (!me?.id) throw new Error('verifyExpectedAccount() returned no user id')
 
@@ -117,7 +113,7 @@ async function main() {
     if (!tweet?.id || !tweet?.text) continue
     if (seenCandidateIds.has(tweet.id)) continue
     seenCandidateIds.add(tweet.id)
-    if (alreadyDrafted(tweet.id)) continue
+    if (await draftStore.hasUnpostedForTweet(tweet.id)) continue
     if (additions.length >= receiptLimit) break
 
     try {
@@ -128,17 +124,17 @@ async function main() {
     }
   }
 
-  replies.push(...additions)
-  writeJson(repliesPath, replies)
+  const inserted = await draftStore.addDrafts(additions)
   writeJson(statePath, state)
+  await draftStore.close()
 
-  if (!additions.length) {
+  if (!inserted.length) {
     console.log('No new tx receipt mention drafts.')
     return
   }
 
-  console.log(`Created ${additions.length} tx receipt draft(s). Review with: npm run replies:show`)
-  for (const draft of additions) {
+  console.log(`Created ${inserted.length} tx receipt draft(s). Review with: npm run replies:show`)
+  for (const draft of inserted) {
     console.log(`- ${draft.id} for ${draft.txSignature.slice(0, 8)}...${draft.txSignature.slice(-6)}`)
   }
 }

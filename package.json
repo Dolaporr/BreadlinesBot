@@ -14,6 +14,7 @@
     "bot:daemon": "node ./scripts/bot-daemon.mjs",
     "mentions:receipt": "node ./scripts/bot-mentions.mjs",
     "replies:show": "node ./scripts/show-replies.mjs",
+    "replies:approve": "node ./scripts/approve-reply.mjs",
     "reply:approved": "node ./scripts/post-approved-reply.mjs",
     "post:approved": "node ./scripts/post-approved.mjs",
     "queue:show": "node ./scripts/show-queue.mjs",
@@ -27,5 +28,8 @@
     "oauth:bot:finish": "node ./scripts/oauth-pin-finish.mjs",
     "check:character": "node -e \"JSON.parse(require('fs').readFileSync('./characters/breadlines-bot.character.json','utf8')); console.log('character json ok')\"",
     "receipt:test": "node ./scripts/test-tx-receipt.mjs"
+  },
+  "dependencies": {
+    "pg": "^8.22.0"
   }
 }

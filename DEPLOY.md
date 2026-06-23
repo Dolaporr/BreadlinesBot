@@ -22,7 +22,9 @@ TWITTER_API_KEY=
 TWITTER_API_SECRET_KEY=
 TWITTER_ACCESS_TOKEN=
 TWITTER_ACCESS_TOKEN_SECRET=
-TWITTER_EXPECTED_USERNAME=BreadLinesBot
+TWITTER_EXPECTED_USERNAME=Breadlinebot
+BOT_DRAFT_STORE=auto
+DATABASE_URL=
 OPENAI_API_KEY=
 BOT_MODEL=gpt-4.1-mini
 BREADLINES_SITE=https://breadlinesmarkets.com
@@ -64,16 +66,16 @@ breadlines-bot
 5. Railway should use `railway.json`, whose start command is:
 
 ```bash
-npm run bot:daemon
+npm run mentions:receipt
 ```
 
 6. Add all env vars from the list above in the Railway Variables tab.
-7. Deploy.
-8. Open logs and confirm:
+7. Add Railway Postgres and attach it to the worker if you want Draft Inbox persistence. This should expose `DATABASE_URL`.
+8. Deploy.
+9. Open logs and confirm:
 
 ```txt
-BreadLines bot daemon started
-Tokens are for @BreadLinesBot
+Draft store: postgres:DATABASE_URL
 ```
 
 ## Render Steps

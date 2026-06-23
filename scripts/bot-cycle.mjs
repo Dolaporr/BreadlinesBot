@@ -5,12 +5,12 @@ import { generateJson } from './openai-client.mjs'
 import { createTweet, getMentions, searchRecent, verifyExpectedAccount } from './x-client.mjs'
 import { cleanText, hasLink, isRelevantTweet, isSafeText } from './policy.mjs'
 import { analyzeTweetForReceipt, generateTxReceipt } from './tx-receipt.mjs'
+import { createDraftStore } from './draft-store.mjs'
 
 loadEnv()
 
 const dataDir = path.resolve('data')
 const queuePath = path.join(dataDir, 'queue.json')
-const repliesPath = path.join(dataDir, 'replies.json')
 const statePath = path.join(dataDir, 'bot-state.json')
 const historyPath = path.join(dataDir, 'history.json')
 const repliedTweetsPath = path.join(dataDir, 'replied-tweets.json')
@@ -543,8 +543,11 @@ const state = readJson(statePath, {
   replyCount: 0,
   ...nextPostTime(),
 })
+const replyDraftStore = createDraftStore()
+await replyDraftStore.init()
+console.log(`Draft store: ${replyDraftStore.label}`)
 const queue = readJson(queuePath, [])
-const replies = readJson(repliesPath, [])
+const replies = await replyDraftStore.listDrafts()
 const history = readJson(historyPath, [])
 const repliedTweets = readJson(repliedTweetsPath, [])
 
@@ -589,7 +592,8 @@ await maybePost({ queue, state, history })
 await maybeReply({ replies, state, history, repliedTweets })
 
 writeJson(queuePath, queue)
-writeJson(repliesPath, replies)
+await replyDraftStore.saveAllDrafts(replies)
+await replyDraftStore.close()
 writeJson(statePath, state)
 writeJson(historyPath, history)
 writeJson(repliedTweetsPath, repliedTweets)

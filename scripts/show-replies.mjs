@@ -1,14 +1,13 @@
-import fs from 'node:fs'
-import path from 'node:path'
+import { loadEnv } from './env.mjs'
+import { createDraftStore } from './draft-store.mjs'
 
-const repliesPath = path.resolve('data/replies.json')
+loadEnv()
 
-if (!fs.existsSync(repliesPath)) {
-  console.log('No replies yet. Run: npm run bot:cycle')
-  process.exit(0)
-}
+const draftStore = createDraftStore()
+await draftStore.init()
 
-const replies = JSON.parse(fs.readFileSync(repliesPath, 'utf8'))
+console.log(`Draft store: ${draftStore.label}`)
+const replies = await draftStore.listDrafts({ unpostedOnly: true })
 const pending = replies.filter((item) => !item.posted)
 
 for (const reply of pending) {
@@ -26,3 +25,4 @@ for (const reply of pending) {
 }
 
 console.log(`\n${pending.length} unposted reply draft(s).`)
+await draftStore.close()

@@ -94,9 +94,10 @@ Review reply drafts:
 npm run replies:show
 ```
 
-Approve one reply in `data/replies.json`, then dry-run:
+Approve one reply, then dry-run:
 
 ```bash
+npm run replies:approve -- DRAFT_ID
 npm run reply:approved
 ```
 
@@ -107,7 +108,7 @@ This is the safest current bot job.
 ```txt
 @Breadlinebot + Solana tx signature
   -> build a real Breadlines receipt
-  -> save an unapproved draft in data/replies.json
+  -> save an unapproved draft in the Draft Inbox
   -> operator reviews and approves manually
 ```
 
@@ -118,10 +119,10 @@ npm run mentions:receipt
 npm run replies:show
 ```
 
-Approve one draft in `data/replies.json`:
+Approve one draft:
 
-```json
-"approved": true
+```bash
+npm run replies:approve -- DRAFT_ID
 ```
 
 Then dry-run or post the approved reply:
@@ -129,6 +130,29 @@ Then dry-run or post the approved reply:
 ```bash
 npm run reply:approved
 ```
+
+## Draft Inbox v0
+
+Use Postgres for Railway so drafts survive redeploys.
+
+Railway setup:
+
+1. Add a Railway Postgres database to the same project.
+2. Attach/link it to the worker so `DATABASE_URL` appears in the worker variables.
+3. Keep `BOT_DRAFT_STORE=auto`.
+4. Redeploy the worker.
+
+When `DATABASE_URL` exists, the bot creates a `breadlines_reply_drafts` table automatically. Without `DATABASE_URL`, local development falls back to `data/replies.json`.
+
+Inbox commands:
+
+```bash
+npm run replies:show
+npm run replies:approve -- DRAFT_ID
+npm run reply:approved
+```
+
+Keep `TWITTER_DRY_RUN=true` while testing. `reply:approved` will print the reply it would post without sending it.
 
 Receipt replies use:
 
