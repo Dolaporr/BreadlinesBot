@@ -1,1 +1,1 @@
-worker: npm run mentions:receipt
+worker: npm run mentions:daemon

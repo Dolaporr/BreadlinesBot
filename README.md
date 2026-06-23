@@ -119,6 +119,20 @@ npm run mentions:receipt
 npm run replies:show
 ```
 
+Run the receipt-only daemon for near-real-time replies:
+
+```bash
+npm run mentions:daemon
+```
+
+Set the poll interval with:
+
+```env
+BOT_RECEIPT_POLL_INTERVAL_MS=60000
+```
+
+The daemon polls X mentions on that interval, so a new tagged transaction should usually be handled within about a minute. It is polling, not a push webhook.
+
 Approve one draft:
 
 ```bash
@@ -182,6 +196,8 @@ Receipt replies use:
 They do not invent savings, blame a protocol, or claim what Percolator would have done.
 
 The standalone mention timer `npm run mentions:receipt` is draft-only unless `BOT_RECEIPT_AUTO_REPLY=true` and `TWITTER_DRY_RUN=false`.
+
+Railway uses `npm run mentions:daemon` for the worker so receipt mentions keep being checked continuously.
 
 Do not use the broad legacy auto-reply mode for receipts. Keep these off:
 

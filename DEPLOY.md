@@ -36,6 +36,7 @@ BOT_AUTO_POST=false
 BOT_AUTO_REPLY=false
 BOT_MENTIONS_ENABLED=true
 BOT_RECEIPT_AUTO_REPLY=false
+BOT_RECEIPT_POLL_INTERVAL_MS=60000
 BOT_RECEIPTS_ENABLED=true
 BOT_SEARCH_ENABLED=false
 BOT_THREAD_MENTION_SEARCH_ENABLED=false
@@ -69,7 +70,7 @@ breadlines-bot
 5. Railway should use `railway.json`, whose start command is:
 
 ```bash
-npm run mentions:receipt
+npm run mentions:daemon
 ```
 
 6. Add all env vars from the list above in the Railway Variables tab.

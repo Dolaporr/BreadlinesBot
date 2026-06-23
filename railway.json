@@ -1,7 +1,7 @@
 {
   "$schema": "https://railway.com/railway.schema.json",
   "deploy": {
-    "startCommand": "npm run mentions:receipt",
+    "startCommand": "npm run mentions:daemon",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
   }
