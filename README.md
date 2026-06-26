@@ -86,6 +86,7 @@ Default behavior:
 - `BOT_THREAD_MENTION_SEARCH_ENABLED=true`: also searches for `@Breadlinebot` inside reply threads
 - `BOT_SEARCH_ENABLED=false`: does not scan broader search by default
 - `BOT_RECEIPTS_ENABLED=true`: turns tx-signature mentions into receipt drafts
+- `BOT_CONTENT_POST_ENABLED=false`: disables original timeline posts unless explicitly enabled
 - `BOT_ALLOW_ACCOUNT_TAGGING=false`: never tags large accounts by default
 
 Review reply drafts:
@@ -132,6 +133,27 @@ BOT_RECEIPT_POLL_INTERVAL_MS=60000
 ```
 
 The daemon polls X mentions on that interval, so a new tagged transaction should usually be handled within about a minute. It is polling, not a push webhook.
+
+## Content Pulse Mode
+
+This keeps the bot alive with original posts without turning on search replies or AI drafting.
+
+```env
+BOT_CONTENT_POST_ENABLED=true
+BOT_CONTENT_MIN_INTERVAL_MINUTES=180
+BOT_CONTENT_MAX_INTERVAL_MINUTES=420
+BOT_CONTENT_LINK_EVERY_N_POSTS=4
+BOT_CONTENT_USE_OPENAI=true
+BOT_CONTENT_OPENAI_CANDIDATES=6
+```
+
+When enabled, `npm run mentions:daemon` also runs a slow content loop. With OpenAI mode on, it generates fresh trench-native Breadlines posts about failed swaps, tx receipts, coin activity receipts, FCFS/MCP, Percolator framing, and Casebook. Unsafe or tagged candidates are rejected, and the bot falls back to curated templates if OpenAI fails. No account tagging, no price calls, no holder hype.
+
+Test one dry run locally:
+
+```bash
+npm run content:post
+```
 
 Approve one draft:
 

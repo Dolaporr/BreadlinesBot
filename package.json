@@ -14,6 +14,7 @@
     "bot:daemon": "node ./scripts/bot-daemon.mjs",
     "mentions:receipt": "node ./scripts/bot-mentions.mjs",
     "mentions:daemon": "node ./scripts/receipt-daemon.mjs",
+    "content:post": "node ./scripts/content-post.mjs",
     "replies:show": "node ./scripts/show-replies.mjs",
     "replies:approve": "node ./scripts/approve-reply.mjs",
     "reply:approved": "node ./scripts/post-approved-reply.mjs",

@@ -38,6 +38,13 @@ BOT_MENTIONS_ENABLED=true
 BOT_RECEIPT_AUTO_REPLY=false
 BOT_RECEIPT_POLL_INTERVAL_MS=60000
 BOT_RECEIPTS_ENABLED=true
+BOT_CONTENT_POST_ENABLED=false
+BOT_CONTENT_CHECK_INTERVAL_MS=60000
+BOT_CONTENT_MIN_INTERVAL_MINUTES=180
+BOT_CONTENT_MAX_INTERVAL_MINUTES=420
+BOT_CONTENT_LINK_EVERY_N_POSTS=4
+BOT_CONTENT_USE_OPENAI=false
+BOT_CONTENT_OPENAI_CANDIDATES=6
 BOT_SEARCH_ENABLED=false
 BOT_THREAD_MENTION_SEARCH_ENABLED=false
 BOT_MAX_REPLIES_PER_CYCLE=3
@@ -81,6 +88,27 @@ npm run mentions:daemon
 ```txt
 Draft store: postgres:DATABASE_URL
 ```
+
+## Alive Mode: Curated Content Pulse
+
+The Railway start command can stay:
+
+```bash
+npm run mentions:daemon
+```
+
+To make the bot post original Breadlines content while still only replying to direct receipt mentions, enable:
+
+```env
+BOT_CONTENT_POST_ENABLED=true
+BOT_CONTENT_MIN_INTERVAL_MINUTES=180
+BOT_CONTENT_MAX_INTERVAL_MINUTES=420
+BOT_CONTENT_LINK_EVERY_N_POSTS=4
+BOT_CONTENT_USE_OPENAI=true
+BOT_CONTENT_OPENAI_CANDIDATES=6
+```
+
+With `BOT_CONTENT_USE_OPENAI=true`, the bot asks OpenAI for fresh trench-native posts, rejects unsafe/tagged candidates, and falls back to curated templates if generation fails. It does not search X and does not tag large accounts.
 
 ## Render Steps
 
